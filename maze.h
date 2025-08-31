@@ -1,6 +1,9 @@
 #ifndef MAZE_H
 #define MAZE_H
 
+#include<stdio.h>
+#include<stdlib.h>
+
 typedef struct{
 	Block block;
 	int consume;
