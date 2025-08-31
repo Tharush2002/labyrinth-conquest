@@ -37,6 +37,7 @@ void load_stairs(){
 	
 		n++;		
 	}
+	fclose(fp);
 }
 
 void load_poles(){
@@ -61,7 +62,8 @@ void load_poles(){
 		poles[n].length_num = length_num;
 	
 		n++;
-	}		
+	}	
+	fclose(fp);	
 }
 
 void load_walls(){
@@ -88,6 +90,7 @@ void load_walls(){
 	
 		n++;		
 	}
+	fclose(fp);
 }
 
 void load_flag(){
@@ -104,4 +107,5 @@ void load_flag(){
 		flag.width_num = width_num;
 		flag.length_num = length_num;
 	}
+	fclose(fp);
 }
