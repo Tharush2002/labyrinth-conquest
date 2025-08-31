@@ -2,39 +2,49 @@
 #define MAZE_H
 
 typedef struct{
+	Block block;
+	int consume;
+}Cell;
+
+typedef struct{
 	int floor;
-	int block_width_num;
-	int block_length_num;
-}block;
+	int width_num;
+	int length_num;
+}Block;
 
 typedef struct{
 	int start_floor;
-	int start_block_width_num;
-	int start_block_length_num;	
+	int start_width_num;
+	int start_length_num;	
 	int end_floor;
-	int block_cell_width_num;
-	int block_cell_length_num;
-}stair;
+	int end_width_num;
+	int end_length_num;
+}Stair;
 
 typedef struct{
 	int start_floor;
 	int end_floor;
-	int block_width_num;
-	int block_length_num;
-}pole;
+	int width_num;
+	int length_num;
+}Pole;
 
 typedef struct{
 	int floor;
-	int start_block_width_num;
-	int start_block_length_num;	
-	int end_block_width_num;
-	int end_block_length_num;
-}wall;
+	int start_width_num;
+	int start_length_num;	
+	int end_width_num;
+	int end_length_num;
+}Wall;
 
-typedef struct{
-	int floor;
-	int block_width_num;
-	int block_length_num;
-}goal;
+extern Block goal;
+extern Stair *stairs;
+extern Pole *poles;
+extern Walls *walls;
+
+void init_game();
+void load_stairs();
+void load_poles();
+void load_walls();
+void load_flag();
 
 #endif

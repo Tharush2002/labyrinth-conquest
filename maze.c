@@ -1,1 +1,107 @@
 #include "maze.h"
+
+Block flag;
+Stair *stairs;
+Pole *poles;
+Walls *walls;
+
+void init game(){
+	load_stairs();
+	load_poles();
+	load_walls();
+	load_flag();
+}
+
+void load_stairs(){
+	File *fp = fopen("stairs.txt", "r");
+	if(fp == NULL){
+		printf("Error opening stairs.txt\n");
+		return;
+	}
+
+	int start_floor, start_width_num, start_length_num, end_floor, end_width_num, end_length_num;
+	int n = 0;
+
+	while(fscanf(fp, "[%d, %d, %d, %d, %d, %d]", &start_floor, &start_width_num, &start_length_num, &end_floor, &end_width_num, &end_length_num) != EOF){
+		if(n==0){
+			stairs = (Stair *)malloc(sizeof(Stair));
+		}else{
+			stairs = realloc(stairs, (n+1)*sizeof(Stair));
+		}
+		stairs[n].start_floor = start_floor;
+		stairs[n].start_width_num = start_width_num;
+		stairs[n].start_length_num = start_length_num;
+		stairs[n].end_floor = end_floor;
+		stairs[n].end_width_num = end_width_num;
+		stairs[n].end_length_num = end_length_num;
+	
+		n++;		
+	}
+}
+
+void load_poles(){
+	File *fp = fopen("poles.txt", "r");
+	if(fp == NULL){
+		printf("Error opening poles.txt\n");
+		return;
+	}
+	
+	int start_floor, end_floor, width_num, length_num;
+	int n = 0;
+
+	while(fscanf(fp, "[%d, %d, %d, %d]", &start_floor, &end_floor, &width_num, &length_num) != EOF){
+		if(n==0){
+			poles = (Pole *)malloc(sizeof(Pole));
+		}else{
+			poles = realloc(poles, (n+1)*sizeof(Pole));
+		}
+		poles[n].start_floor = start_floor;
+		poles[n].end_floor = end_floor;
+		poles[n].width_num = width_num;
+		poles[n].length_num = length_num;
+	
+		n++;
+	}		
+}
+
+void load_walls(){
+	File *fp = fopen("walls.txt", "r");
+	if(fp == NULL){
+		printf("Error opening walls.txt\n");
+		return;
+	}
+
+	int floor, start_width_num, start_length_num, end_width_num, end_length_num;
+	int n = 0;
+
+	while(fscanf(fp, "[%d, %d, %d, %d, %d]", &floor, &start_width_num, &start_length_num, &end_width_num, &end_length_num) != EOF){
+		if(n==0){
+			walls = (Wall *)malloc(sizeof(Wall));
+		}else{
+			walls = realloc(stairs, (n+1)*sizeof(Wall));
+		}
+		walls[n].start_floor = start_floor;
+		walls[n].start_width_num = start_width_num;
+		walls[n].start_length_num = start_length_num;
+		walls[n].end_width_num = end_width_num;
+		walls[n].end_length_num = end_length_num;
+	
+		n++;		
+	}
+}
+
+void load_flag(){
+	File *fp = fopen("flag.txt", "r");
+	if(fp == NULL){
+		printf("Error opening flag.txt\n");
+		return;
+	}
+
+	int floor, width_num, length_num;
+
+	if(fscanf(fp, "[%d, %d, %d]", &floor, &width_num, &length_num) == 3){
+		flag.floor = floor;
+		flag.width_num = width_num;
+		flag.length_num = length_num;
+	}
+}
