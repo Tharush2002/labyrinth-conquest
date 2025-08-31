@@ -5,6 +5,8 @@ Stair *stairs;
 Pole *poles;
 Walls *walls;
 
+int stairs_count, poles_count, walls_count;
+
 void init game(){
 	load_stairs("stairs.txt");
 	load_poles("poles.txt");
@@ -37,6 +39,7 @@ void load_stairs(const char *stairs_file){
 	
 		n++;		
 	}
+	stairs_count = ++n;
 	fclose(fp);
 }
 
@@ -63,6 +66,7 @@ void load_poles(const char *poles_file){
 	
 		n++;
 	}	
+	poles_count = ++n;
 	fclose(fp);	
 }
 
@@ -90,6 +94,7 @@ void load_walls(const char *walls_file){
 	
 		n++;		
 	}
+	walls_count = ++n;
 	fclose(fp);
 }
 
