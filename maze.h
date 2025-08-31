@@ -39,15 +39,15 @@ typedef struct{
 	int end_length_num;
 }Wall;
 
-extern Block goal;
+extern Block flag;
 extern Stair *stairs;
 extern Pole *poles;
 extern Walls *walls;
 
 void init_game();
-void load_stairs();
-void load_poles();
-void load_walls();
-void load_flag();
+void load_stairs(const char *stairs_file);
+void load_poles(const char *poles_file);
+void load_walls(const char *walls_file);
+void load_flag(const char *flag_file);
 
 #endif

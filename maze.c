@@ -6,14 +6,14 @@ Pole *poles;
 Walls *walls;
 
 void init game(){
-	load_stairs();
-	load_poles();
-	load_walls();
-	load_flag();
+	load_stairs("stairs.txt");
+	load_poles("poles.txt");
+	load_walls("walls.txt");
+	load_flag("flag.txt");
 }
 
-void load_stairs(){
-	File *fp = fopen("stairs.txt", "r");
+void load_stairs(const char *stairs_file){
+	File *fp = fopen(stairs_file, "r");
 	if(fp == NULL){
 		printf("Error opening stairs.txt\n");
 		return;
@@ -40,8 +40,8 @@ void load_stairs(){
 	fclose(fp);
 }
 
-void load_poles(){
-	File *fp = fopen("poles.txt", "r");
+void load_poles(const char *poles_file){
+	File *fp = fopen(poles_file, "r");
 	if(fp == NULL){
 		printf("Error opening poles.txt\n");
 		return;
@@ -66,8 +66,8 @@ void load_poles(){
 	fclose(fp);	
 }
 
-void load_walls(){
-	File *fp = fopen("walls.txt", "r");
+void load_walls(const char *walls_file){
+	File *fp = fopen(walls_file, "r");
 	if(fp == NULL){
 		printf("Error opening walls.txt\n");
 		return;
@@ -93,8 +93,8 @@ void load_walls(){
 	fclose(fp);
 }
 
-void load_flag(){
-	File *fp = fopen("flag.txt", "r");
+void load_flag(const char *flag_file){
+	File *fp = fopen(flag_file, "r");
 	if(fp == NULL){
 		printf("Error opening flag.txt\n");
 		return;
