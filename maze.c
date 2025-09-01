@@ -3,11 +3,11 @@
 Block flag;
 Stair *stairs;
 Pole *poles;
-Walls *walls;
+Wall *walls;
 
 int stairs_count, poles_count, walls_count;
 
-void init game(){
+void init_game(){
 	load_stairs("stairs.txt");
 	load_poles("poles.txt");
 	load_walls("walls.txt");
@@ -15,7 +15,7 @@ void init game(){
 }
 
 void load_stairs(const char *stairs_file){
-	File *fp = fopen(stairs_file, "r");
+	FILE *fp = fopen(stairs_file, "r");
 	if(fp == NULL){
 		printf("Error opening stairs.txt\n");
 		return;
@@ -44,7 +44,7 @@ void load_stairs(const char *stairs_file){
 }
 
 void load_poles(const char *poles_file){
-	File *fp = fopen(poles_file, "r");
+	FILE *fp = fopen(poles_file, "r");
 	if(fp == NULL){
 		printf("Error opening poles.txt\n");
 		return;
@@ -71,7 +71,7 @@ void load_poles(const char *poles_file){
 }
 
 void load_walls(const char *walls_file){
-	File *fp = fopen(walls_file, "r");
+	FILE *fp = fopen(walls_file, "r");
 	if(fp == NULL){
 		printf("Error opening walls.txt\n");
 		return;
@@ -86,7 +86,7 @@ void load_walls(const char *walls_file){
 		}else{
 			walls = realloc(stairs, (n+1)*sizeof(Wall));
 		}
-		walls[n].start_floor = start_floor;
+		walls[n].floor = floor;
 		walls[n].start_width_num = start_width_num;
 		walls[n].start_length_num = start_length_num;
 		walls[n].end_width_num = end_width_num;
@@ -99,7 +99,7 @@ void load_walls(const char *walls_file){
 }
 
 void load_flag(const char *flag_file){
-	File *fp = fopen(flag_file, "r");
+	FILE *fp = fopen(flag_file, "r");
 	if(fp == NULL){
 		printf("Error opening flag.txt\n");
 		return;

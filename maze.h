@@ -4,6 +4,10 @@
 #include<stdio.h>
 #include<stdlib.h>
 
+#define FLOORS 3
+#define WIDTH 10
+#define LENGTH 25
+
 typedef struct{
 	Block block;
 	int consume;
@@ -42,7 +46,7 @@ typedef struct{
 extern Block flag;
 extern Stair *stairs;
 extern Pole *poles;
-extern Walls *walls;
+extern Wall *walls;
 
 void init_game();
 void load_stairs(const char *stairs_file);
