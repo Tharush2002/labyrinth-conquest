@@ -8,15 +8,45 @@
 #define WIDTH 10
 #define LENGTH 25
 
+#define BAWANA_FOOD_POISONING_ROUNDS 3
+#define BAWANA_DISORIENTED_ROUNDS 4
+#define BAWANA_DISORIENTED_BONUS 50
+#define BAWANA_TRIGGERED_BONUS 50
+#define BAWANA_TRIGGERED_MULTIPLIER 2
+#define BAWANA_HAPPY_BONUS 200
+
+typedef enum { NA=-1, NORTH, SOUTH, EAST, WEST } Direction;
+typedef enum { NA=-1, FOOD_POISONING, DISORIENTED, TRIGGERED, HAPPY}BawanaState;
+typedef enum { NORMAL, COST, BONUS, MULTIPLIER } ConsumeType;
+
 typedef struct{
-	Block block;
-	int consume;
-}Cell;
+	Player player;
+	int round;
+	int movement_dice;
+	Direction direction_dice;
+}Game;
+
+typedef struct{
+	char player_name;
+	Block *current_block;
+	Direction direction;
+	int rem_points;
+	Bawana bawana_effect;
+}Player;
+
+typedef struct{
+	BawanaState state;
+	int block_width_num;
+	int block_length_num;
+	int effect_rounds;
+}Bawana;
 
 typedef struct{
 	int floor;
 	int width_num;
 	int length_num;
+	ConsumeType type;
+	int consume_value;
 }Block;
 
 typedef struct{
@@ -47,6 +77,8 @@ extern Block flag;
 extern Stair *stairs;
 extern Pole *poles;
 extern Wall *walls;
+
+extern Block maze[FLOORS][WIDTH][LENGTH];
 
 void init_game();
 void load_stairs(const char *stairs_file);
