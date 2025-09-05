@@ -146,3 +146,6 @@ Direction get_direction(int direction_dice){
 	}
 }
 
+int roll_dice(){
+	return (rand() % 6) + 1;
+}
