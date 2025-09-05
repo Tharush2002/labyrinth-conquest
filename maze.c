@@ -131,4 +131,18 @@ void change_stair_direction(){
 	}
 }
 
+Direction get_direction(int direction_dice){
+	switch(direction_dice){
+		case 2:
+			return NORTH;
+		case 3:
+			return EAST;
+		case 4:
+			return SOUTH;
+		case 5:
+			return WEST;
+		default:
+			return NA; 
+	}
+}
 
