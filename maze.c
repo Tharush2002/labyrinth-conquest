@@ -114,3 +114,21 @@ void load_flag(const char *flag_file){
 	}
 	fclose(fp);
 }
+
+void change_stair_direction(){
+	for(int i=0; i<stairs_count; i++){
+		int temp_floor = stairs[i].start_floor;
+		int temp_width_num = stairs[i].start_width_num;
+		int temp_length_num = stairs[i].start_length_num;
+
+		stairs[i].start_floor = stairs[i].end_floor;
+		stairs[i].start_width_num = stairs[i].end_width_num;
+		stairs[i].start_length_num = stairs[i].end_length_num;
+
+		stairs[i].end_floor = temp_floor;
+		stairs[i].end_width_num = temp_width_num;
+		stairs[i].end_length_num = temp_length_num;
+	}
+}
+
+
