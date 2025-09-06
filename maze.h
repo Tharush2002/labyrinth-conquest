@@ -81,9 +81,15 @@ extern Wall *walls;
 extern Block maze[FLOORS][WIDTH][LENGTH];
 
 void init_game();
+void init_maze();
+int is_blocked_by_wall(int floor, int width_num, int length_num);
+int is_blocked_by_stair(int floor, int width_num, int length_num);
 void load_stairs(const char *stairs_file);
 void load_poles(const char *poles_file);
 void load_walls(const char *walls_file);
 void load_flag(const char *flag_file);
+void change_stair_direction();
+Direction get_direction(int direction_dice);
+int roll_dice();
 
 #endif
