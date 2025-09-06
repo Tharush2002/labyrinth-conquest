@@ -5,6 +5,8 @@ Stair *stairs;
 Pole *poles;
 Wall *walls;
 
+Block maze[FLOORS][WIDTH][LENGTH];
+
 int stairs_count, poles_count, walls_count;
 
 void init_game(){
@@ -12,6 +14,81 @@ void init_game(){
 	load_poles("poles.txt");
 	load_walls("walls.txt");
 	load_flag("flag.txt");
+
+	init_maze();
+}
+
+void init_maze(){
+	for(int f=0; f<FLOORS; f++){
+		for(int w=0; w<WIDTH; w++){
+			for(int l=0; l<LENGTH; l++){
+				Block b = { -1, -1, -1, -1, -1 };
+
+				if(is_blocked_by_wall(f, w, l) || is_blocked_by_stair(f, w, l)){
+					maze[f][w][l] = b;
+					continue;
+				}
+
+				// Initialize non movable blocks based on floor
+				switch(f){
+					case 0:
+						// Initialize floor 0 non movable blocks
+						if(((w>=6 && w<WIDTH) && (l>=8 && l<=16)) || ((w>=6 && w<WIDTH) && (l>=20 && l<LENGTH))){
+							maze[f][w][l] = b;
+							continue;
+						}
+						break;
+					case 1:
+						// Initialize floor 1 non movable blocks
+						if((w>=0 && w<=5) && (l>=8 && l<=16)){
+							maze[f][w][l] = b;
+							continue;
+						}
+						break;
+					case 2:
+						// Initialize floor 2 non movable blocks
+						if(!(l>=8 && l<=16)){
+							maze[f][w][l] = b;
+							continue;
+						}
+						break;
+				}
+
+				// Initialize all blocks as normal blocks
+				b.floor = f;
+				b.width_num = w;
+				b.length_num = l;
+				b.type = NORMAL;
+				b.consume_value = 0;
+
+				maze[f][w][l] = b;
+			}
+		}
+	}
+}
+
+int is_blocked_by_wall(int floor, int width_num, int length_num){
+	for(int i=0; i<walls_count; i++){
+		if(walls[i].floor == floor){
+			if((width_num >= walls[i].start_width_num && width_num <= walls[i].end_width_num) &&
+			   (length_num >= walls[i].start_length_num && length_num <= walls[i].end_length_num)){
+				return 1;
+			}
+		}
+	}
+	return 0; 
+}
+
+int is_blocked_by_stair(int floor, int width_num, int length_num){
+	for(int i=0; i<stairs_count; i++){
+		int upper = (stairs[i].start_floor > stairs[i].end_floor) ? stairs[i].start_floor : stairs[i].end_floor;
+		int lower = (stairs[i].start_floor < stairs[i].end_floor) ? stairs[i].start_floor : stairs[i].end_floor;
+
+		if((abs(stairs[i].start_floor-stairs[i].end_floor)>1) && (floor > lower && floor < upper)){
+			return 1;
+		}
+	}
+	return 0; 
 }
 
 void load_stairs(const char *stairs_file){
