@@ -1,9 +1,9 @@
 #include "maze.h"
 
 Block flag;
-Stair *stairs;
-Pole *poles;
-Wall *walls;
+Stair *stairs = NULL;
+Pole *poles = NULL;
+Wall *walls = NULL;
 
 Block maze[FLOORS][WIDTH][LENGTH];
 
@@ -100,13 +100,28 @@ void load_stairs(const char *stairs_file){
 
 	int start_floor, start_width_num, start_length_num, end_floor, end_width_num, end_length_num;
 	int n = 0;
+	char buffer[100];
 
-	while(fscanf(fp, "[%d, %d, %d, %d, %d, %d]", &start_floor, &start_width_num, &start_length_num, &end_floor, &end_width_num, &end_length_num) != EOF){
-		if(n==0){
-			stairs = (Stair *)malloc(sizeof(Stair));
-		}else{
-			stairs = realloc(stairs, (n+1)*sizeof(Stair));
+	while(1){
+		int matched = fscanf(fp, "[%d, %d, %d, %d, %d, %d]", &start_floor, &start_width_num, &start_length_num, &end_floor, &end_width_num, &end_length_num);
+
+		if(matched == EOF){
+			break;
+		}else if(matched != 6){
+			fgets(buffer, sizeof(buffer), fp);
+            printf("Error : Skipping error line stairs.txt (got %d values but expect 6)\n", matched);
+			continue;
 		}
+
+		Stair *temp = realloc(stairs, (n+1)*sizeof(Stair));
+		if (temp == NULL) {
+    		printf("Memory allocation failed for stairs array\n");
+    		free(stairs);
+    		fclose(fp);
+   			return;
+		}
+		stairs = temp;
+
 		stairs[n].start_floor = start_floor;
 		stairs[n].start_width_num = start_width_num;
 		stairs[n].start_length_num = start_length_num;
@@ -129,13 +144,28 @@ void load_poles(const char *poles_file){
 	
 	int start_floor, end_floor, width_num, length_num;
 	int n = 0;
+	char buffer[100];
 
-	while(fscanf(fp, "[%d, %d, %d, %d]", &start_floor, &end_floor, &width_num, &length_num) != EOF){
-		if(n==0){
-			poles = (Pole *)malloc(sizeof(Pole));
-		}else{
-			poles = realloc(poles, (n+1)*sizeof(Pole));
+	while(1){
+		int matched = fscanf(fp, "[%d, %d, %d, %d]", &start_floor, &end_floor, &width_num, &length_num);
+		
+		if(matched == EOF){
+			break;
+		}else if(matched != 4){
+			fgets(buffer, sizeof(buffer), fp);
+			printf("Error : Skipping error line poles.txt (got %d values but expect 4)\n", matched);
+			continue;
 		}
+
+		Pole *temp = realloc(poles, (n+1)*sizeof(Pole));
+		if (temp == NULL) {
+    		printf("Memory allocation failed for poles array\n");
+    		free(stairs);
+    		fclose(fp);
+   			return;
+		}
+		poles = temp;
+
 		poles[n].start_floor = start_floor;
 		poles[n].end_floor = end_floor;
 		poles[n].width_num = width_num;
@@ -156,13 +186,28 @@ void load_walls(const char *walls_file){
 
 	int floor, start_width_num, start_length_num, end_width_num, end_length_num;
 	int n = 0;
+	char buffer[100];
 
-	while(fscanf(fp, "[%d, %d, %d, %d, %d]", &floor, &start_width_num, &start_length_num, &end_width_num, &end_length_num) != EOF){
-		if(n==0){
-			walls = (Wall *)malloc(sizeof(Wall));
-		}else{
-			walls = realloc(stairs, (n+1)*sizeof(Wall));
+	while(1){
+		int matched = fscanf(fp, "[%d, %d, %d, %d, %d]", &floor, &start_width_num, &start_length_num, &end_width_num, &end_length_num);
+
+		if(matched == EOF){
+			break;
+		}else if(matched != 5){
+			fgets(buffer, sizeof(buffer), fp);
+			printf("Error : Skipping error line walls.txt (got %d values but expect 5)\n", matched);
+			continue;
 		}
+
+		Wall *temp = realloc(walls, (n+1)*sizeof(Wall));
+		if (temp == NULL) {
+			printf("Memory allocation failed for walls array\n");
+			free(walls);
+			fclose(fp);
+   			return;
+		}
+		walls = temp;
+
 		walls[n].floor = floor;
 		walls[n].start_width_num = start_width_num;
 		walls[n].start_length_num = start_length_num;
@@ -188,6 +233,8 @@ void load_flag(const char *flag_file){
 		flag.floor = floor;
 		flag.width_num = width_num;
 		flag.length_num = length_num;
+	}else{
+		printf("Error : No matched cell found for flag in flag.txt\n");
 	}
 	fclose(fp);
 }
