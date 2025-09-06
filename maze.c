@@ -24,34 +24,10 @@ void init_maze(){
 			for(int l=0; l<LENGTH; l++){
 				Block b = { -1, -1, -1, -1, -1 };
 
-				if(is_blocked_by_wall(f, w, l) || is_blocked_by_stair(f, w, l)){
+				// If the block is blocked by wall or stair or out of playable area, mark it as invalid block
+				if(is_blocked_by_wall(f, w, l) || is_blocked_by_stair(f, w, l) || !is_in_the_playable_area(f, w, l)){
 					maze[f][w][l] = b;
 					continue;
-				}
-
-				// Initialize non movable blocks based on floor
-				switch(f){
-					case 0:
-						// Initialize floor 0 non movable blocks
-						if(((w>=6 && w<WIDTH) && (l>=8 && l<=16)) || ((w>=6 && w<WIDTH) && (l>=20 && l<LENGTH))){
-							maze[f][w][l] = b;
-							continue;
-						}
-						break;
-					case 1:
-						// Initialize floor 1 non movable blocks
-						if((w>=0 && w<=5) && (l>=8 && l<=16)){
-							maze[f][w][l] = b;
-							continue;
-						}
-						break;
-					case 2:
-						// Initialize floor 2 non movable blocks
-						if(!(l>=8 && l<=16)){
-							maze[f][w][l] = b;
-							continue;
-						}
-						break;
 				}
 
 				// Initialize all blocks as normal blocks
@@ -91,6 +67,24 @@ int is_blocked_by_stair(int floor, int width_num, int length_num){
 	return 0; 
 }
 
+int is_in_the_playable_area(int floor, int width, int length){
+	switch(floor){
+		case 0:
+			if(((width>=6 && width<WIDTH) && (length>=8 && length<=16)) || ((width>=6 && width<WIDTH) && (length>=20 && length<LENGTH))){
+				return 0;
+			}
+		case 1:
+			if((width>=0 && width<=5) && (length>=8 && length<=16)){
+				return 0;
+			}
+		case 2:
+			if(!(length>=8 && length<=16)){
+				return 0;
+			}
+	}
+	return 1;
+}
+
 void load_stairs(const char *stairs_file){
 	FILE *fp = fopen(stairs_file, "r");
 	if(fp == NULL){
@@ -110,6 +104,9 @@ void load_stairs(const char *stairs_file){
 		}else if(matched != 6){
 			fgets(buffer, sizeof(buffer), fp);
             printf("Error : Skipping error line stairs.txt (got %d values but expect 6)\n", matched);
+			continue;
+		}else if(!is_in_the_playable_area(start_floor, start_width_num, start_length_num) || !is_in_the_playable_area(end_floor, end_width_num, end_length_num)){
+			printf("Error : Skipping error line stairs.txt (stairs out of playable area)\n");
 			continue;
 		}
 
@@ -154,6 +151,9 @@ void load_poles(const char *poles_file){
 		}else if(matched != 4){
 			fgets(buffer, sizeof(buffer), fp);
 			printf("Error : Skipping error line poles.txt (got %d values but expect 4)\n", matched);
+			continue;
+		}else if(!is_in_the_playable_area(start_floor, width_num, length_num)){
+			printf("Error : Skipping error line poles.txt (poles out of playable area)\n");
 			continue;
 		}
 
