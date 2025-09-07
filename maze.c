@@ -46,42 +46,6 @@ void init_maze(){
 	}
 }
 
-Block* move_through_stair_or_pole(int floor, int width, int length){
-	Pole *p[MAX_POLES_FROM_SAME_CELL] = {NULL};
-	Stair *s[MAX_STAIRS_FROM_SAME_CELL] = {NULL};
-
-	int s_count = stairs_from_cell(floor, width, length, s);
-	int p_count = poles_from_cell(floor, width, length, p);
-
-	if(p_count == 0 && s_count == 0){
-		return &maze[floor][width][length];
-	}else if(p_count == 1 && s_count == 0){
-		return &maze[p[0]->end_floor][width][length];
-	}else if(p_count == 0 && s_count == 1){
-		return &maze[s[0]->end_floor][s[0]->end_width_num][s[0]->end_length_num];
-	}else{
-		int non_looping_s[MAX_STAIRS_FROM_SAME_CELL], non_looping_p[MAX_POLES_FROM_SAME_CELL];
-		int visited_s[MAX_STAIRS_FROM_SAME_CELL] = {0};
-		int visited_p[MAX_POLES_FROM_SAME_CELL] = {0};
-
-		for (int i = 0; i < MAX_STAIRS_FROM_SAME_CELL; i++)	non_looping_s[i] = (s[i] != NULL) ? i : -1;
-		for (int j = 0; j < MAX_POLES_FROM_SAME_CELL; j++)	non_looping_p[j] = (p[j] != NULL) ? j : -1;
-
-		for (int i = 0; i < MAX_STAIRS_FROM_SAME_CELL; i++) {
-			if (s[i] != NULL && !visited_s[i])
-				mark_loops(STAIR, i, visited_s, visited_p, s, p, non_looping_s, non_looping_p);
-		}
-
-		for (int j = 0; j < MAX_POLES_FROM_SAME_CELL; j++) {
-			if (p[j] != NULL && !visited_p[j])
-				mark_loops(POLE, j, visited_s, visited_p, s, p, non_looping_s, non_looping_p);
-		}
-
-		return closest_sp_destination(s_count, p_count, non_looping_s, non_looping_p, floor, width, length);
-
-	}
-}
-
 void change_stair_direction(){
 	for(int i=0; i<stairs_count; i++){
 		int temp_floor = stairs[i].start_floor;
@@ -100,23 +64,25 @@ void change_stair_direction(){
 
 int move_piece(Block *current_block){
 	if(can_move_entirely(current_block)){
-		switch(game_state.direction_dice){
-			case NORTH:
-				current_block->width_num -= game_state.movement_dice;
-				break;
-			case SOUTH:
-				current_block->width_num += game_state.movement_dice;
-				break;
-			case EAST:
-				current_block->length_num += game_state.movement_dice;
-				break;
-			case WEST:
-				current_block->length_num -= game_state.movement_dice;
-				break;
-			default:
-				printf("Invalid direction!\n");
-				return 0;
-		}
+		// switch(game_state.direction_dice){
+		// 	case NORTH:
+		// 		current_block->width_num -= game_state.movement_dice;
+		// 		break;
+		// 	case SOUTH:
+		// 		current_block->width_num += game_state.movement_dice;
+		// 		break;
+		// 	case EAST:
+		// 		current_block->length_num += game_state.movement_dice;
+		// 		break;
+		// 	case WEST:
+		// 		current_block->length_num -= game_state.movement_dice;
+		// 		break;
+		// 	default:
+		// 		printf("Invalid direction!\n");
+		// 		return 0;
+		// }
+		// return 1;
+		printf("Move successful!\n");
 		return 1;
 	}else{
 		printf("Move blocked!\n");
@@ -219,6 +185,7 @@ int can_move_entirely(Block *current_block){
 	int f = current_block->floor;
 	int w = current_block->width_num;
 	int l = current_block->length_num;
+	Block *block;
 
 	for(int i=1 ; i<=game_state.movement_dice; i++){
 		switch(game_state.direction_dice){
@@ -249,13 +216,54 @@ int can_move_entirely(Block *current_block){
 			printf("Move out of bounds of the maze playable area!\n");
 		}
 
-		Block *block = move_through_stair_or_pole(f, w, l);
+		block = move_from_stair_or_pole(f, w, l);
 		
 		f = block->floor;
 		w = block->width_num;
 		l = block->length_num;		
 	}
+
+	set_destination_block(block);
 	return 1;
+}
+
+void set_destination_block(Block *block){
+	game_state.player.current_block = block;
+}
+
+Block* move_from_stair_or_pole(int floor, int width, int length){
+	Pole *p[MAX_POLES_FROM_SAME_CELL] = {NULL};
+	Stair *s[MAX_STAIRS_FROM_SAME_CELL] = {NULL};
+
+	int s_count = stairs_from_cell(floor, width, length, s);
+	int p_count = poles_from_cell(floor, width, length, p);
+
+	if(p_count == 0 && s_count == 0){
+		return &maze[floor][width][length];
+	}else if(p_count == 1 && s_count == 0){
+		return &maze[p[0]->end_floor][width][length];
+	}else if(p_count == 0 && s_count == 1){
+		return &maze[s[0]->end_floor][s[0]->end_width_num][s[0]->end_length_num];
+	}else{
+		int non_looping_s[MAX_STAIRS_FROM_SAME_CELL], non_looping_p[MAX_POLES_FROM_SAME_CELL];
+		int visited_s[MAX_STAIRS_FROM_SAME_CELL] = {0};
+		int visited_p[MAX_POLES_FROM_SAME_CELL] = {0};
+
+		for (int i = 0; i < MAX_STAIRS_FROM_SAME_CELL; i++)	non_looping_s[i] = (s[i] != NULL) ? i : -1;
+		for (int j = 0; j < MAX_POLES_FROM_SAME_CELL; j++)	non_looping_p[j] = (p[j] != NULL) ? j : -1;
+
+		for (int i = 0; i < MAX_STAIRS_FROM_SAME_CELL; i++) {
+			if (s[i] != NULL && !visited_s[i])
+				mark_loops(STAIR, i, visited_s, visited_p, s, p, non_looping_s, non_looping_p);
+		}
+
+		for (int j = 0; j < MAX_POLES_FROM_SAME_CELL; j++) {
+			if (p[j] != NULL && !visited_p[j])
+				mark_loops(POLE, j, visited_s, visited_p, s, p, non_looping_s, non_looping_p);
+		}
+
+		return closest_sp_destination(s_count, p_count, non_looping_s, non_looping_p, floor, width, length);
+	}
 }
 
 void mark_loops(BlockType type, int current_index,
