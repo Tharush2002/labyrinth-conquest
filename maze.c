@@ -47,18 +47,48 @@ void init_maze(){
 }
 
 void change_stair_direction(){
-	for(int i=0; i<stairs_count; i++){
-		int temp_floor = stairs[i].start_floor;
-		int temp_width_num = stairs[i].start_width_num;
-		int temp_length_num = stairs[i].start_length_num;
+	StairDirection rand_dir = (Direction)rand()%3;
 
-		stairs[i].start_floor = stairs[i].end_floor;
-		stairs[i].start_width_num = stairs[i].end_width_num;
-		stairs[i].start_length_num = stairs[i].end_length_num;
+	switch(rand_dir){
+		case UNI_DOWN:
+			for(int i=0; i<stairs_count; i++){
+				if(stairs[0].start_floor < stairs[0].end_floor){
+					int temp_floor = stairs[i].start_floor;
+					int temp_width_num = stairs[i].start_width_num;
+					int temp_length_num = stairs[i].start_length_num;
 
-		stairs[i].end_floor = temp_floor;
-		stairs[i].end_width_num = temp_width_num;
-		stairs[i].end_length_num = temp_length_num;
+					stairs[i].start_floor = stairs[i].end_floor;
+					stairs[i].start_width_num = stairs[i].end_width_num;
+					stairs[i].start_length_num = stairs[i].end_length_num;
+
+					stairs[i].end_floor = temp_floor;
+					stairs[i].end_width_num = temp_width_num;
+					stairs[i].end_length_num = temp_length_num;
+				}
+				stairs[i].direction = UNI_DOWN;
+			}
+		case UNI_UP:
+			for(int i=0; i<stairs_count; i++){
+				if(stairs[0].start_floor > stairs[0].end_floor){
+					int temp_floor = stairs[i].start_floor;
+					int temp_width_num = stairs[i].start_width_num;
+					int temp_length_num = stairs[i].start_length_num;
+
+					stairs[i].start_floor = stairs[i].end_floor;
+					stairs[i].start_width_num = stairs[i].end_width_num;
+					stairs[i].start_length_num = stairs[i].end_length_num;
+
+					stairs[i].end_floor = temp_floor;
+					stairs[i].end_width_num = temp_width_num;
+					stairs[i].end_length_num = temp_length_num;
+				}
+				stairs[i].direction = UNI_UP;
+			}			
+			break;
+		case BI:
+			for(int i=0; i<stairs_count; i++){
+				stairs[i].direction = BI;
+			}
 	}
 }
 
@@ -382,6 +412,7 @@ void load_stairs(const char *stairs_file){
 		stairs[n].end_floor = end_floor;
 		stairs[n].end_width_num = end_width_num;
 		stairs[n].end_length_num = end_length_num;
+		stairs[n].direction = BI;
 	
 		n++;		
 	}
