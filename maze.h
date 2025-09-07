@@ -23,6 +23,7 @@ typedef enum { NA, NORTH, SOUTH, EAST, WEST } Direction;
 typedef enum { NA, FOOD_POISONING, DISORIENTED, TRIGGERED, HAPPY}BawanaState;
 typedef enum { NORMAL, COST, BONUS, MULTIPLIER } ConsumeType;
 typedef enum { STAIR, POLE, WALL, NORMAL} BlockType;
+typedef enum { UNI_UP, UNI_DOWN, BI } StairDirection;
 
 typedef struct{
 	Player player;
@@ -61,6 +62,7 @@ typedef struct{
 	int end_floor;
 	int end_width_num;
 	int end_length_num;
+	StairDirection direction;
 }Stair;
 
 typedef struct{
