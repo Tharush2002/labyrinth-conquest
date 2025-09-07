@@ -90,7 +90,6 @@ extern Game game_state;
 
 void init_game();
 void init_maze();
-Block* move_through_stair_or_pole(int floor, int width, int length);
 void change_stair_direction();
 int move_piece(Block *current_block);
 
@@ -104,6 +103,7 @@ int is_blocked_by_wall(int floor, int width_num, int length_num);
 int is_blocked_by_stair(int floor, int width_num, int length_num);
 int is_in_the_playable_area(int floor, int width, int length);
 int can_move_entirely(Block *current_block);
+Block* move_from_stair_or_pole(int floor, int width, int length);
 void mark_loops(BlockType type, int current_index,
 				int visited_s[], int visited_p[],
 				Stair *s[], Pole *p[], int non_looping_s[], int non_looping_p[]);
