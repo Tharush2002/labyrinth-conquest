@@ -6,13 +6,16 @@ Pole *poles = NULL;
 Wall *walls = NULL;
 
 Block maze[FLOORS][WIDTH][LENGTH];
+Game game_state;
 
 int stairs_count, poles_count, walls_count;
 
+// MAIN FUNCTIONS
+
 void init_game(){
+	load_walls("walls.txt");
 	load_stairs("stairs.txt");
 	load_poles("poles.txt");
-	load_walls("walls.txt");
 	load_flag("flag.txt");
 
 	init_maze();
@@ -43,6 +46,127 @@ void init_maze(){
 	}
 }
 
+Block* move_through_stair_or_pole(int floor, int width, int length){
+	Pole *p[MAX_POLES_FROM_SAME_CELL] = {NULL};
+	Stair *s[MAX_STAIRS_FROM_SAME_CELL] = {NULL};
+
+	int s_count = stairs_from_cell(floor, width, length, s);
+	int p_count = poles_from_cell(floor, width, length, p);
+
+	if(p_count == 0 && s_count == 0){
+		return &maze[floor][width][length];
+	}else if(p_count == 1 && s_count == 0){
+		return &maze[p[0]->end_floor][width][length];
+	}else if(p_count == 0 && s_count == 1){
+		return &maze[s[0]->end_floor][s[0]->end_width_num][s[0]->end_length_num];
+	}else{
+		int non_looping_s[MAX_STAIRS_FROM_SAME_CELL], non_looping_p[MAX_POLES_FROM_SAME_CELL];
+		int visited_s[MAX_STAIRS_FROM_SAME_CELL] = {0};
+		int visited_p[MAX_POLES_FROM_SAME_CELL] = {0};
+
+		for (int i = 0; i < MAX_STAIRS_FROM_SAME_CELL; i++)	non_looping_s[i] = (s[i] != NULL) ? i : -1;
+		for (int j = 0; j < MAX_POLES_FROM_SAME_CELL; j++)	non_looping_p[j] = (p[j] != NULL) ? j : -1;
+
+		for (int i = 0; i < MAX_STAIRS_FROM_SAME_CELL; i++) {
+			if (s[i] != NULL && !visited_s[i])
+				mark_loops(STAIR, i, visited_s, visited_p, s, p, non_looping_s, non_looping_p);
+		}
+
+		for (int j = 0; j < MAX_POLES_FROM_SAME_CELL; j++) {
+			if (p[j] != NULL && !visited_p[j])
+				mark_loops(POLE, j, visited_s, visited_p, s, p, non_looping_s, non_looping_p);
+		}
+
+		return closest_sp_destination(s_count, p_count, non_looping_s, non_looping_p, floor, width, length);
+
+	}
+}
+
+void change_stair_direction(){
+	for(int i=0; i<stairs_count; i++){
+		int temp_floor = stairs[i].start_floor;
+		int temp_width_num = stairs[i].start_width_num;
+		int temp_length_num = stairs[i].start_length_num;
+
+		stairs[i].start_floor = stairs[i].end_floor;
+		stairs[i].start_width_num = stairs[i].end_width_num;
+		stairs[i].start_length_num = stairs[i].end_length_num;
+
+		stairs[i].end_floor = temp_floor;
+		stairs[i].end_width_num = temp_width_num;
+		stairs[i].end_length_num = temp_length_num;
+	}
+}
+
+int move_piece(Block *current_block){
+	if(can_move_entirely(current_block)){
+		switch(game_state.direction_dice){
+			case NORTH:
+				current_block->width_num -= game_state.movement_dice;
+				break;
+			case SOUTH:
+				current_block->width_num += game_state.movement_dice;
+				break;
+			case EAST:
+				current_block->length_num += game_state.movement_dice;
+				break;
+			case WEST:
+				current_block->length_num -= game_state.movement_dice;
+				break;
+			default:
+				printf("Invalid direction!\n");
+				return 0;
+		}
+		return 1;
+	}else{
+		printf("Move blocked!\n");
+		return 0;
+	}
+}
+
+
+
+// HELPER FUNCTIONS
+
+int roll_dice(){
+	return (rand() % 6) + 1;
+}
+
+Direction get_direction(int direction_dice){
+	switch(direction_dice){
+		case 2:
+			return NORTH;
+		case 3:
+			return EAST;
+		case 4:
+			return SOUTH;
+		case 5:
+			return WEST;
+		default:
+			return NA; 
+	}
+}
+
+int stairs_from_cell(int floor, int width, int length, Stair *out[]){
+	int count = 0;
+	for(int i=0; i<stairs_count; i++){
+		if((stairs[i].start_floor == floor) && (stairs[i].start_width_num == width) && (stairs[i].start_length_num == length)){
+			out[count++] = &stairs[i];
+		}
+	}
+	return count;
+}
+
+int poles_from_cell(int floor, int width, int length, Pole *out[]){
+	int count = 0;
+	for(int i=0; i<poles_count; i++){
+		if((poles[i].start_floor == floor) && (poles[i].width_num == width) && (poles[i].length_num == length)){
+			out[count++] = &poles[i];
+		}
+	}
+	return count;
+}
+
 int is_blocked_by_wall(int floor, int width_num, int length_num){
 	for(int i=0; i<walls_count; i++){
 		if(walls[i].floor == floor){
@@ -68,6 +192,12 @@ int is_blocked_by_stair(int floor, int width_num, int length_num){
 }
 
 int is_in_the_playable_area(int floor, int width, int length){
+	// Check if the block is within the bounds of the maze
+	if(floor < 0 || floor >= FLOORS || width < 0 || width >= WIDTH || length < 0 || length >= LENGTH){
+		return 0;
+	}
+
+	// Define the playable area for each floor
 	switch(floor){
 		case 0:
 			if(((width>=6 && width<WIDTH) && (length>=8 && length<=16)) || ((width>=6 && width<WIDTH) && (length>=20 && length<LENGTH))){
@@ -83,6 +213,109 @@ int is_in_the_playable_area(int floor, int width, int length){
 			}
 	}
 	return 1;
+}
+
+int can_move_entirely(Block *current_block){
+	int f = current_block->floor;
+	int w = current_block->width_num;
+	int l = current_block->length_num;
+
+	for(int i=1 ; i<=game_state.movement_dice; i++){
+		switch(game_state.direction_dice){
+			case NORTH:
+				w -= i;
+				break;
+			case SOUTH:
+				w += i;
+				break;
+			case EAST:
+				l += i;
+				break;
+			case WEST:
+				l -= i;
+				break;
+			default:
+				printf("Invalid direction!\n");
+				return 0;
+		}
+		if(is_blocked_by_stair(f, w, l)){
+			return 0;
+			printf("Move blocked by stair!\n");
+		}else if(is_blocked_by_wall(f, w, l)){
+			return 0;
+			printf("Move blocked by wall!\n");
+		}else if(!is_in_the_playable_area(f, w, l)){
+			return 0;
+			printf("Move out of bounds of the maze playable area!\n");
+		}
+
+		Block *block = move_through_stair_or_pole(f, w, l);
+		
+		f = block->floor;
+		w = block->width_num;
+		l = block->length_num;		
+	}
+	return 1;
+}
+
+void mark_loops(BlockType type, int current_index,
+                int visited_s[], int visited_p[],
+                Stair *s[], Pole *p[], int non_looping_s[], int non_looping_p[]) {
+
+    switch(type) {
+        case STAIR:
+			if (visited_s[current_index]) return; 
+			visited_s[current_index] = 1;         
+
+			for (int i = 0; i < MAX_STAIRS_FROM_SAME_CELL; i++) {
+				if (s[i] != NULL) {
+					if (s[i]->end_floor == s[current_index]->start_floor &&
+						s[i]->start_floor == s[current_index]->end_floor) {
+						non_looping_s[i] = -1;
+						non_looping_s[current_index] = -1;
+					}
+					mark_loops(0, i, visited_s, visited_p, s, p, non_looping_s, non_looping_p);
+				}
+			}
+
+			for (int j = 0; j < MAX_POLES_FROM_SAME_CELL; j++) {
+				if (p[j] != NULL) {
+					if (p[j]->end_floor == s[current_index]->start_floor &&
+						s[current_index]->end_floor == p[j]->start_floor) {
+						non_looping_s[current_index] = -1;
+						non_looping_p[j] = -1;
+					}
+					mark_loops(1, j, visited_s, visited_p, s, p, non_looping_s, non_looping_p);
+				}
+			}
+			break;
+
+		case POLE:
+			if (visited_p[current_index]) return;  
+			visited_p[current_index] = 1;          
+
+			for (int i = 0; i < MAX_STAIRS_FROM_SAME_CELL; i++) {
+				if (s[i] != NULL) {
+					if (s[i]->end_floor == p[current_index]->start_floor &&
+						p[current_index]->end_floor == s[i]->start_floor) {
+						non_looping_s[i] = -1;
+						non_looping_p[current_index] = -1;
+					}
+					mark_loops(0, i, visited_s, visited_p, s, p, non_looping_s, non_looping_p);
+				}
+			}
+
+			for (int j = 0; j < MAX_POLES_FROM_SAME_CELL; j++) {
+				if (p[j] != NULL) {
+					if (p[j]->end_floor == p[current_index]->start_floor &&
+						p[current_index]->end_floor == p[j]->start_floor) {
+						non_looping_p[j] = -1;
+						non_looping_p[current_index] = -1;
+					}
+					mark_loops(1, j, visited_s, visited_p, s, p, non_looping_s, non_looping_p);
+				}
+			}
+    }
 }
 
 void load_stairs(const char *stairs_file){
@@ -108,7 +341,23 @@ void load_stairs(const char *stairs_file){
 		}else if(!is_in_the_playable_area(start_floor, start_width_num, start_length_num) || !is_in_the_playable_area(end_floor, end_width_num, end_length_num)){
 			printf("Error : Skipping error line stairs.txt (stairs out of playable area)\n");
 			continue;
+		}else{
+			// Check if there are more than 2 stairs in the same cell
+			int count = 0;
+			for(int i=0; i<stairs_count; i++){
+				if((stairs[i].start_floor == start_floor) && (stairs[i].start_width_num == start_width_num) && (stairs[i].start_length_num == start_length_num)){
+					count++;
+				}
+				if((stairs[i].end_floor == end_floor) && (stairs[i].end_width_num == end_width_num) && (stairs[i].end_length_num == end_length_num)){
+					count++;
+				}
+			}
+			if(count >= MAX_STAIRS_FROM_SAME_CELL){
+				printf("Error : Skipping error line stairs.txt (more than 2 stairs in the same cell)\n");
+				continue;
+			}
 		}
+
 
 		Stair *temp = realloc(stairs, (n+1)*sizeof(Stair));
 		if (temp == NULL) {
@@ -155,6 +404,18 @@ void load_poles(const char *poles_file){
 		}else if(!is_in_the_playable_area(start_floor, width_num, length_num)){
 			printf("Error : Skipping error line poles.txt (poles out of playable area)\n");
 			continue;
+		}else{
+			// Check if there are more than designated poles in the same cell
+			int count = 0;
+			for(int i=0; i<poles_count; i++){
+				if((poles[i].start_floor == start_floor) && (poles[i].width_num == width_num) && (poles[i].length_num == length_num)){
+					count++;
+				}
+			}
+			if(count >= MAX_POLES_FROM_SAME_CELL){
+				printf("Error : Skipping error line poles.txt (more than 1 pole in the same cell)\n");
+				continue;
+			}
 		}
 
 		Pole *temp = realloc(poles, (n+1)*sizeof(Pole));
@@ -197,6 +458,9 @@ void load_walls(const char *walls_file){
 			fgets(buffer, sizeof(buffer), fp);
 			printf("Error : Skipping error line walls.txt (got %d values but expect 5)\n", matched);
 			continue;
+		}else if(!is_in_the_playable_area(floor, start_width_num, start_length_num) || !is_in_the_playable_area(floor, end_width_num, end_length_num)){
+			printf("Error : Skipping error line walls.txt (walls out of playable area)\n");
+			continue;
 		}
 
 		Wall *temp = realloc(walls, (n+1)*sizeof(Wall));
@@ -237,39 +501,4 @@ void load_flag(const char *flag_file){
 		printf("Error : No matched cell found for flag in flag.txt\n");
 	}
 	fclose(fp);
-}
-
-void change_stair_direction(){
-	for(int i=0; i<stairs_count; i++){
-		int temp_floor = stairs[i].start_floor;
-		int temp_width_num = stairs[i].start_width_num;
-		int temp_length_num = stairs[i].start_length_num;
-
-		stairs[i].start_floor = stairs[i].end_floor;
-		stairs[i].start_width_num = stairs[i].end_width_num;
-		stairs[i].start_length_num = stairs[i].end_length_num;
-
-		stairs[i].end_floor = temp_floor;
-		stairs[i].end_width_num = temp_width_num;
-		stairs[i].end_length_num = temp_length_num;
-	}
-}
-
-Direction get_direction(int direction_dice){
-	switch(direction_dice){
-		case 2:
-			return NORTH;
-		case 3:
-			return EAST;
-		case 4:
-			return SOUTH;
-		case 5:
-			return WEST;
-		default:
-			return NA; 
-	}
-}
-
-int roll_dice(){
-	return (rand() % 6) + 1;
 }
