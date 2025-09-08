@@ -113,6 +113,6 @@ void mark_loops(BlockType type, int current_index,
 void load_stairs(const char *stairs_file);
 void load_poles(const char *poles_file);
 void load_walls(const char *walls_file);
-void load_flag(const char *flag_file);
+int load_flag(const char *flag_file);
 
 #endif
