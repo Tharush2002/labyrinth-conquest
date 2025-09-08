@@ -19,33 +19,11 @@
 #define MAX_STAIRS_FROM_SAME_CELL 2
 #define MAX_POLES_FROM_SAME_CELL 1
 
-typedef enum { NA, NORTH, SOUTH, EAST, WEST } Direction;
-typedef enum { NA, FOOD_POISONING, DISORIENTED, TRIGGERED, HAPPY}BawanaState;
-typedef enum { NORMAL, COST, BONUS, MULTIPLIER } ConsumeType;
-typedef enum { STAIR, POLE, WALL, NORMAL} BlockType;
+typedef enum { DIR_NA=-1, NORTH, SOUTH, EAST, WEST } Direction;
+typedef enum { BAWANA_NA=-1, FOOD_POISONING, DISORIENTED, TRIGGERED, HAPPY}BawanaState;
+typedef enum { CONSUMER_NA=-1, NORMAL, COST, BONUS, MULTIPLIER } ConsumeType;
+typedef enum { STAIR, POLE, WALL, BK_NORMAL} BlockType;
 typedef enum { UNI_UP, UNI_DOWN, BI } StairDirection;
-
-typedef struct{
-	Player player;
-	int round;
-	int movement_dice;
-	Direction direction_dice;
-}Game;
-
-typedef struct{
-	char player_name;
-	Block *current_block;
-	Direction direction;
-	int rem_points;
-	Bawana bawana_effect;
-}Player;
-
-typedef struct{
-	BawanaState state;
-	int block_width_num;
-	int block_length_num;
-	int effect_rounds;
-}Bawana;
 
 typedef struct{
 	int floor;
@@ -80,6 +58,28 @@ typedef struct{
 	int end_length_num;
 }Wall;
 
+typedef struct{
+	BawanaState state;
+	int block_width_num;
+	int block_length_num;
+	int effect_rounds;
+}Bawana;
+
+typedef struct{
+	char player_name;
+	Block *current_block;
+	Direction direction;
+	int rem_points;
+	Bawana bawana_effect;
+}Player;
+
+typedef struct{
+	Player player;
+	int round;
+	int movement_dice;
+	Direction direction_dice;
+}Game;
+
 extern Block flag;
 extern Stair *stairs;
 extern Pole *poles;
@@ -92,6 +92,7 @@ extern Game game_state;
 
 void init_game();
 void init_maze();
+void assign_consumables();
 void change_stair_direction();
 int move_piece(Block *current_block);
 
