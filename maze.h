@@ -3,6 +3,7 @@
 
 #include<stdio.h>
 #include<stdlib.h>
+#include<math.h>
 
 #define FLOORS 3
 #define WIDTH 10
@@ -100,16 +101,22 @@ int move_piece(Block *current_block);
 
 int roll_dice();
 Direction get_direction(int direction_dice);
-int stairs_from_cell(int floor, int width_num, int length_num, Stair *out[]);
-int poles_from_cell(int floor, int width_num, int length_num, Pole *out[]);
 int is_blocked_by_wall(int floor, int width_num, int length_num);
 int is_blocked_by_stair(int floor, int width_num, int length_num);
 int is_in_the_playable_area(int floor, int width, int length);
 int can_move_entirely(Block *current_block);
+void set_destination_block(Block *block);
+Block* closest_sp_destination(int non_looping_s[], int non_looping_p[], int floor, int width, int length);
+
 Block* move_from_stair_or_pole(int floor, int width, int length);
+int stairs_from_cell(int floor, int width_num, int length_num, Stair *out[]);
+int poles_from_cell(int floor, int width_num, int length_num, Pole *out[]);
 void mark_loops(BlockType type, int current_index,
 				int visited_s[], int visited_p[],
 				Stair *s[], Pole *p[], int non_looping_s[], int non_looping_p[]);
+int is_stair_loop(Stair *a, Stair *b);
+int is_stair_pole_loop(Stair *stair, Pole *pole);
+
 void load_stairs(const char *stairs_file);
 void load_poles(const char *poles_file);
 void load_walls(const char *walls_file);

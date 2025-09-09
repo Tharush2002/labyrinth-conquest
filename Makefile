@@ -2,6 +2,7 @@
 CC = gcc
 # Compiler flags
 CFLAGS = -Wall -Wextra -std=c11
+LDFLAGS = -lm
 # Executable name
 TARGET = maze_runner
 # Source files
@@ -14,7 +15,7 @@ all: $(TARGET)
 
 # Link object files to create the executable
 $(TARGET): $(OBJS)
-	$(CC) $(OBJS) -o $(TARGET)
+	$(CC) $(OBJS) -o $(TARGET) $(LDFLAGS)
 
 # Compile .c files into .o files
 %.o: %.c
