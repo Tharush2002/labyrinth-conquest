@@ -6,6 +6,8 @@ Pole *poles = NULL;
 Wall *walls = NULL;
 
 Block maze[FLOORS][WIDTH][LENGTH];
+Bawana bawana[(WIDTH-7)*(LENGTH-21)];
+
 Game game_state;
 
 int stairs_count, poles_count, walls_count;
@@ -44,8 +46,8 @@ void init_maze(){
 			}
 		}
 	}
-
 	assign_consumables();
+	init_bawana();
 }
 
 void assign_consumables(){
@@ -76,19 +78,14 @@ void assign_consumables(){
 					maze[f][w][l].length_num != -1 &&
 					maze[f][w][l].type != -1 &&
 					maze[f][w][l].consume_value != -1){
+
 					temp[index++] = &maze[f][w][l]; 
 				}
 			}
 		}
 	}
 
-	// Shuffle the array using Fisher-Yates algorithm
-	for(int i=consumable_blocks-1; i>0; i--){
-		int j = rand() % (i+1);
-		int t = temp[i];
-		temp[i] = temp[j];
-		temp[j] = t;
-	}
+	shuffle_array(temp, consumable_blocks, sizeof(Block*));
 
 	int zero_consumable_blocks = consumable_blocks * 25 / 100;
 	int one_to_four_consumable_blocks = consumable_blocks * 35 / 100;
@@ -121,6 +118,42 @@ void assign_consumables(){
 	for(int i=0 ; i<multiplier_blocks ; i++, index++){
 		temp[index]->type = MULTIPLIER;
 		temp[index]->consume_value = (rand() % 2) + 2;
+	}
+}
+
+void init_bawana(){
+	int index = 0;
+	Bawana *temp[(WIDTH-7)*(LENGTH-21)];
+	for(int w=7 ; w<WIDTH ;w++){
+		for(int l=21 ; l<LENGTH ; l++){
+			bawana[index] = (Bawana){BAWANA_NA, w, l, -1};
+			temp[index] = &bawana[index];
+            index++;
+		}		
+	}
+
+	shuffle_array(temp, (WIDTH-7)*(LENGTH-21), sizeof(Bawana*));
+
+	index = 0;
+	for(int i=0 ; i<2 ; i++, index++){
+		temp[i]->state = FOOD_POISONING;
+		temp[i]->effect_rounds = BAWANA_FOOD_POISONING_ROUNDS;
+	}
+	for(int i=0 ; i<2 ; i++, index++){
+		temp[i]->state = DISORIENTED;
+		temp[i]->effect_rounds = BAWANA_DISORIENTED_ROUNDS;
+	}
+	for(int i=0 ; i<2 ; i++, index++){
+		temp[i]->state = TRIGGERED;
+		temp[i]->effect_rounds = BAWANA_TRIGGERED_ROUNDS;
+	}
+	for(int i=0 ; i<2 ; i++, index++){
+		temp[i]->state = HAPPY;
+		temp[i]->effect_rounds = -1;
+	}
+	for(int i=0 ; i<4 ; i++, index++){
+		temp[i]->state = BONUS;
+		temp[i]->effect_rounds = -1;
 	}
 }
 
@@ -206,6 +239,21 @@ int move_piece(Block *current_block){
 
 int roll_dice(){
 	return (rand() % 6) + 1;
+}
+
+void shuffle_array(void *arr, size_t n, size_t elem_size) {
+    unsigned char *array = arr;
+    unsigned char *temp = malloc(elem_size);
+    if (!temp) return;
+
+    for (size_t i = n - 1; i > 0; i--) {
+        size_t j = rand() % (i + 1);
+
+        memcpy(temp, array + i * elem_size, elem_size);
+        memcpy(array + i * elem_size, array + j * elem_size, elem_size);
+        memcpy(array + j * elem_size, temp, elem_size);
+    }
+    free(temp);
 }
 
 Direction get_direction(int direction_dice){
@@ -440,6 +488,7 @@ Block* move_from_stair_or_pole(int floor, int width, int length){
 	}else if(p_count == 0 && s_count == 1){
 		return &maze[s[0]->end_floor][s[0]->end_width_num][s[0]->end_length_num];
 	}else if(p_count > MAX_POLES_FROM_SAME_CELL || s_count > MAX_STAIRS_FROM_SAME_CELL || p_count < 0 || s_count < 0){
+		printf("Error: More than maximum poles or stairs from the same cell in move_from_stair_or_pole\n");
 		return NULL;
 	}else{
 		int non_looping_s[MAX_STAIRS_FROM_SAME_CELL], non_looping_p[MAX_POLES_FROM_SAME_CELL];
@@ -484,7 +533,7 @@ Block* move_from_stair_or_pole(int floor, int width, int length){
 				printf("Error: No valid next block found in move_from_stair_or_pole\n");
 				// return &maze[floor][width][length];
 			}
-			
+
 			return next_block;
 		}				
 	}
@@ -721,7 +770,7 @@ void load_poles(const char *poles_file){
 				}
 			}
 			if(count >= MAX_POLES_FROM_SAME_CELL){
-				printf("Error : Skipping error line poles.txt (more than 1 pole in the same cell)\n");
+				printf("Error : Skipping error line poles.txt (more than %d pole in the same cell)\n", MAX_POLES_FROM_SAME_CELL);
 				continue;
 			}
 		}

@@ -4,6 +4,7 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<math.h>
+#include<string.h>
 
 #define FLOORS 3
 #define WIDTH 10
@@ -11,6 +12,7 @@
 
 #define BAWANA_FOOD_POISONING_ROUNDS 3
 #define BAWANA_DISORIENTED_ROUNDS 4
+#define BAWANA_TRIGGERED_ROUNDS 3
 #define BAWANA_DISORIENTED_BONUS 50
 #define BAWANA_TRIGGERED_BONUS 50
 #define BAWANA_TRIGGERED_MULTIPLIER 2
@@ -21,7 +23,7 @@
 #define MAX_POLES_FROM_SAME_CELL 1
 
 typedef enum { DIR_NA=-1, NORTH, SOUTH, EAST, WEST } Direction;
-typedef enum { BAWANA_NA=-1, FOOD_POISONING, DISORIENTED, TRIGGERED, HAPPY}BawanaState;
+typedef enum { BAWANA_NA=-1, FOOD_POISONING, DISORIENTED, TRIGGERED, HAPPY, BONUS}BawanaState;
 typedef enum { CONSUMER_NA=-1, ZERO, COST, BONUS, MULTIPLIER } ConsumeType;
 typedef enum { STAIR, POLE, WALL, BK_NORMAL} BlockType;
 typedef enum { UNI_UP, UNI_DOWN, BI } StairDirection;
@@ -93,6 +95,8 @@ extern Game game_state;
 
 void init_game();
 void init_maze();
+
+void init_bawana();
 void assign_consumables();
 void change_stair_direction();
 int move_piece(Block *current_block);
@@ -108,9 +112,10 @@ int is_in_the_playable_area(int floor, int width, int length);
 int is_in_bawana_area(int floor, int width, int length);
 int is_in_starting_area(int floor, int width, int length);
 
-int can_move_entirely(Block *current_block);
+int can_move_entirely(Block *current_block, int *cost);
 void set_destination_block(Block *block);
-Block* closest_sp_destination(int non_looping_s[], int non_looping_p[], int floor, int width, int length);
+Block* closest_sp_destination(Stair *s[], Pole *p[],
+                              int non_looping_s[], int non_looping_p[]);
 
 Block* move_from_stair_or_pole(int floor, int width, int length);
 int stairs_from_cell(int floor, int width_num, int length_num, Stair *out[]);
