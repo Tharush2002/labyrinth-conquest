@@ -173,6 +173,6 @@ void log_when_normal(Player *player);
 void log_land_on_stair(Player *player, Block *prev_block, Block *next_block);
 void log_land_on_pole(Player *player, Block *prev_block, Block *next_block);
 void log_player_won(Player *player);
-
+void log_player_captured(Player *player, Player *captured_player);
 
 #endif
