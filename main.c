@@ -47,13 +47,12 @@ int main(){
 			Player *current_player = &game_state.player[i];
 			printf("Player %s's turn:\n", player_id_to_string(current_player->id));
 
-			// Roll the dice
 			game_state.movement_dice = roll_dice();
 
-			// Every 4 rounds, re-roll direction dice
-			if(current_player->player_rounds%4==0 && 
-				is_in_starting_area(current_player->current_block->floor, current_player->current_block->width_num, current_player->current_block->length_num))
-				game_state.direction_dice = roll_dir_dice(current_player->direction);			
+			if(move_piece(current_player)==2){
+				free_maze();
+				return 0;
+			};			
 
 			current_player->player_rounds++;
 		}
@@ -61,5 +60,6 @@ int main(){
 
 	}while(1);
 
+	free_maze();
 	return 0;
 }
