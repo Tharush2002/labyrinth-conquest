@@ -131,9 +131,9 @@ int is_in_starting_area(int floor, int width, int length);
 void set_destination_block(Block *block, Player *player);
 void calc_mp_cost_and_rem(int *cost, int* rem_mp, Block *block);
 Block* closest_sp_destination(Stair *s[], Pole *p[],
-                              int non_looping_s[], int non_looping_p[]);
+                              int non_looping_s[], int non_looping_p[], Player *current_player);
 
-Block* move_from_stair_or_pole(int floor, int width, int length);
+Block* move_from_stair_or_pole(Player *current_player);
 int stairs_from_cell(int floor, int width_num, int length_num, Stair *out[]);
 int poles_from_cell(int floor, int width_num, int length_num, Pole *out[]);
 void mark_loops(BlockType type, int current_index,
@@ -158,8 +158,8 @@ void log_can_move_from_starting_area(Player *player);
 void log_in_maze_with_dir_dice(Player *player);
 void log_in_maze_without_dir_dice(Player *player);
 void log_is_blocked_by_wall(Player *player);
-void log_at_dest(Player *player);
-void log_deliver_to_bawana(Player *player);
+void log_at_dest(Player *player, int *cells, int *cost);
+void log_deliver_to_bawana_mp_depleted(Player *player);
 void log_when_food_poisoning_starts(Player *player);
 void log_when_food_poisoning_exists(Player *player);
 void log_when_food_poisoning_ends(Player *player);
@@ -170,9 +170,9 @@ void log_when_triggered_starts(Player *player);
 void log_when_triggered_exists(Player *player);
 void log_when_happy(Player *player);
 void log_when_normal(Player *player);
-void log_land_on_stair(Player *player, Block *prev_block);
-void log_land_on_pole(Player *player, Block *prev_block);
-void log_on_win(Player *player);
+void log_land_on_stair(Player *player, Block *prev_block, Block *next_block);
+void log_land_on_pole(Player *player, Block *prev_block, Block *next_block);
+void log_player_won(Player *player);
 
 
 #endif
