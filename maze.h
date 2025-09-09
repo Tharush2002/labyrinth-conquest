@@ -22,7 +22,7 @@
 
 typedef enum { DIR_NA=-1, NORTH, SOUTH, EAST, WEST } Direction;
 typedef enum { BAWANA_NA=-1, FOOD_POISONING, DISORIENTED, TRIGGERED, HAPPY}BawanaState;
-typedef enum { CONSUMER_NA=-1, NORMAL, COST, BONUS, MULTIPLIER } ConsumeType;
+typedef enum { CONSUMER_NA=-1, ZERO, COST, BONUS, MULTIPLIER } ConsumeType;
 typedef enum { STAIR, POLE, WALL, BK_NORMAL} BlockType;
 typedef enum { UNI_UP, UNI_DOWN, BI } StairDirection;
 
@@ -103,7 +103,11 @@ int roll_dice();
 Direction get_direction(int direction_dice);
 int is_blocked_by_wall(int floor, int width_num, int length_num);
 int is_blocked_by_stair(int floor, int width_num, int length_num);
+
 int is_in_the_playable_area(int floor, int width, int length);
+int is_in_bawana_area(int floor, int width, int length);
+int is_in_starting_area(int floor, int width, int length);
+
 int can_move_entirely(Block *current_block);
 void set_destination_block(Block *block);
 Block* closest_sp_destination(int non_looping_s[], int non_looping_p[], int floor, int width, int length);
