@@ -164,26 +164,6 @@ Direction get_direction(int direction_dice){
 	}
 }
 
-int stairs_from_cell(int floor, int width, int length, Stair *out[]){
-	int count = 0;
-	for(int i=0; i<stairs_count; i++){
-		if((stairs[i].start_floor == floor) && (stairs[i].start_width_num == width) && (stairs[i].start_length_num == length)){
-			out[count++] = &stairs[i];
-		}
-	}
-	return count;
-}
-
-int poles_from_cell(int floor, int width, int length, Pole *out[]){
-	int count = 0;
-	for(int i=0; i<poles_count; i++){
-		if((poles[i].start_floor == floor) && (poles[i].width_num == width) && (poles[i].length_num == length)){
-			out[count++] = &poles[i];
-		}
-	}
-	return count;
-}
-
 int is_blocked_by_wall(int floor, int width_num, int length_num){
 	for(int i=0; i<walls_count; i++){
 		if(walls[i].floor == floor){
@@ -320,6 +300,37 @@ void set_destination_block(Block *block){
 	game_state.player.current_block = block;
 }
 
+Block* closest_sp_destination(int non_looping_s[], int non_looping_p[], int floor, int width, int length) {
+	// Block *closest_block = &maze[floor][width][length];
+	// double min_distance = INFINITY;
+
+	// for (int i = 0; i < s_count; i++) {
+	// 	if (non_looping_s[i] != -1) {
+	// 		Stair *stair = stairs[non_looping_s[i]];
+	// 		Block *dest_block = &maze[stair->end_floor][stair->end_width_num][stair->end_length_num];
+	// 		double distance = sqrt(pow(dest_block->floor - floor, 2) + pow(dest_block->width_num - width, 2) + pow(dest_block->length_num - length, 2));
+	// 		if (distance < min_distance) {
+	// 			min_distance = distance;
+	// 			closest_block = dest_block;
+	// 		}
+	// 	}
+	// }
+
+	// for (int j = 0; j < p_count; j++) {
+	// 	if (non_looping_p[j] != -1) {
+	// 		Pole *pole = poles[non_looping_p[j]];
+	// 		Block *dest_block = &maze[pole->end_floor][pole->width_num][pole->length_num];
+	// 		double distance = sqrt(pow(dest_block->floor - floor, 2) + pow(dest_block->width_num - width, 2) + pow(dest_block->length_num - length, 2));
+	// 		if (distance < min_distance) {
+	// 			min_distance = distance;
+	// 			closest_block = dest_block;
+	// 		}
+	// 	}
+	// }
+
+	// return closest_block;
+}
+
 Block* move_from_stair_or_pole(int floor, int width, int length){
 	Pole *p[MAX_POLES_FROM_SAME_CELL] = {NULL};
 	Stair *s[MAX_STAIRS_FROM_SAME_CELL] = {NULL};
@@ -351,8 +362,28 @@ Block* move_from_stair_or_pole(int floor, int width, int length){
 				mark_loops(POLE, j, visited_s, visited_p, s, p, non_looping_s, non_looping_p);
 		}
 
-		return closest_sp_destination(s_count, p_count, non_looping_s, non_looping_p, floor, width, length);
+		return closest_sp_destination(non_looping_s, non_looping_p, floor, width, length);
 	}
+}
+
+int stairs_from_cell(int floor, int width, int length, Stair *out[]){
+	int count = 0;
+	for(int i=0; i<stairs_count; i++){
+		if((stairs[i].start_floor == floor) && (stairs[i].start_width_num == width) && (stairs[i].start_length_num == length)){
+			out[count++] = &stairs[i];
+		}
+	}
+	return count;
+}
+
+int poles_from_cell(int floor, int width, int length, Pole *out[]){
+	int count = 0;
+	for(int i=0; i<poles_count; i++){
+		if((poles[i].start_floor == floor) && (poles[i].width_num == width) && (poles[i].length_num == length)){
+			out[count++] = &poles[i];
+		}
+	}
+	return count;
 }
 
 void mark_loops(BlockType type, int current_index,
@@ -409,7 +440,11 @@ void mark_loops(BlockType type, int current_index,
 					mark_loops(1, j, visited_s, visited_p, s, p, non_looping_s, non_looping_p);
 				}
 			}
-    }
+			break;
+		default:
+			printf("Type other than stair or pole is in mark_loops\n");
+			return;
+	}
 }
 
 int is_stair_loop(Stair *a, Stair *b) {
@@ -631,7 +666,7 @@ int load_flag(const char *flag_file){
 	FILE *fp = fopen(flag_file, "r");
 	if(fp == NULL){
 		printf("Error opening flag.txt\n");
-		return;
+		return 0;
 	}
 
 	int floor, width_num, length_num;
