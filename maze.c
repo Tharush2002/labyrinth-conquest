@@ -6,7 +6,7 @@ Pole *poles = NULL;
 Wall *walls = NULL;
 
 Block maze[FLOORS][WIDTH][LENGTH];
-Bawana bawana[(WIDTH-7)*(LENGTH-21)];
+Bawana bawana[BAWANA_SQUARES];
 
 Game game_state;
 
@@ -123,7 +123,7 @@ void assign_consumables(){
 
 void init_bawana(){
 	int index = 0;
-	Bawana *temp[(WIDTH-7)*(LENGTH-21)];
+	Bawana *temp[BAWANA_SQUARES];
 	for(int w=7 ; w<WIDTH ;w++){
 		for(int l=21 ; l<LENGTH ; l++){
 			bawana[index] = (Bawana){BAWANA_NA, w, l, -1};
@@ -132,7 +132,7 @@ void init_bawana(){
 		}		
 	}
 
-	shuffle_array(temp, (WIDTH-7)*(LENGTH-21), sizeof(Bawana*));
+	shuffle_array(temp, BAWANA_SQUARES, sizeof(Bawana*));
 
 	index = 0;
 	for(int i=0 ; i<2 ; i++, index++){
@@ -171,8 +171,7 @@ Block* go_to_starting_pos(Player *player){
 }
 
 void go_to_bawana(Player *player){
-	int bawana_squares = (WIDTH-7)*(LENGTH-21);
-	int i = (rand() % bawana_squares);
+	int i = (rand() % BAWANA_SQUARES);
 	player->bawana_effect = bawana[i];
 
 	switch(player->bawana_effect.state){
