@@ -39,12 +39,7 @@ void init_maze(){
 				}
 
 				// Initialize all blocks as normal blocks
-				b.floor = f;
-				b.width_num = w;
-				b.length_num = l;
-				b.type = ZERO;
-				b.consume_value = 0;
-
+				b = (Block){f, w, l, ZERO, 0};
 				maze[f][w][l] = b;
 			}
 		}
@@ -177,7 +172,8 @@ void change_stair_direction(){
 }
 
 int move_piece(Block *current_block){
-	if(can_move_entirely(current_block)){
+	int cost = 0;
+	if(can_move_entirely(current_block, &cost)){
 		// switch(game_state.direction_dice){
 		// 	case NORTH:
 		// 		current_block->width_num -= game_state.movement_dice;
@@ -306,7 +302,7 @@ int is_in_starting_area(int floor, int width, int length){
 	}
 }
 
-int can_move_entirely(Block *current_block){
+int can_move_entirely(Block *current_block, int *cost){
 	int f = current_block->floor;
 	int w = current_block->width_num;
 	int l = current_block->length_num;
@@ -346,9 +342,14 @@ int can_move_entirely(Block *current_block){
 		
 		f = block->floor;
 		w = block->width_num;
-		l = block->length_num;		
+		l = block->length_num;
+		*cost += block->consume_value;		
 
-		if(is_in_bawana_area(f, w, l)){
+		if(flag.floor == f && flag.width_num == w && flag.length_num == l){
+			printf("Move into flag area!\n");
+			break;
+		}else if(is_in_bawana_area(f, w, l)){
+			// execute bawana conditions
 			printf("Move into Bawana area!\n");
 			break;
 		}else if(is_in_starting_area(f, w, l)){
@@ -365,36 +366,64 @@ void set_destination_block(Block *block){
 	game_state.player.current_block = block;
 }
 
-Block* closest_sp_destination(int non_looping_s[], int non_looping_p[], int floor, int width, int length) {
-	// Block *closest_block = &maze[floor][width][length];
-	// double min_distance = INFINITY;
+Block* closest_sp_destination(Stair *s[], Pole *p[],
+                              int non_looping_s[], int non_looping_p[]) {
+	typedef struct {
+    	BlockType type;
+    	int index;
+	} Candidate;
 
-	// for (int i = 0; i < s_count; i++) {
-	// 	if (non_looping_s[i] != -1) {
-	// 		Stair *stair = stairs[non_looping_s[i]];
-	// 		Block *dest_block = &maze[stair->end_floor][stair->end_width_num][stair->end_length_num];
-	// 		double distance = sqrt(pow(dest_block->floor - floor, 2) + pow(dest_block->width_num - width, 2) + pow(dest_block->length_num - length, 2));
-	// 		if (distance < min_distance) {
-	// 			min_distance = distance;
-	// 			closest_block = dest_block;
-	// 		}
-	// 	}
-	// }
+    int min_distance = 10000;
 
-	// for (int j = 0; j < p_count; j++) {
-	// 	if (non_looping_p[j] != -1) {
-	// 		Pole *pole = poles[non_looping_p[j]];
-	// 		Block *dest_block = &maze[pole->end_floor][pole->width_num][pole->length_num];
-	// 		double distance = sqrt(pow(dest_block->floor - floor, 2) + pow(dest_block->width_num - width, 2) + pow(dest_block->length_num - length, 2));
-	// 		if (distance < min_distance) {
-	// 			min_distance = distance;
-	// 			closest_block = dest_block;
-	// 		}
-	// 	}
-	// }
+	Candidate candidates[MAX_STAIRS_FROM_SAME_CELL + MAX_POLES_FROM_SAME_CELL];
+    int candidate_count = 0;
 
-	// return closest_block;
-	return &maze[floor][width][length];
+    for (int i = 0; i < MAX_STAIRS_FROM_SAME_CELL; i++) {
+        if (non_looping_s[i] != -1 && s[i] != NULL) {
+            int dist = abs(s[i]->end_floor - flag.floor) +
+                       abs(s[i]->end_width_num - flag.width_num) +
+                       abs(s[i]->end_length_num - flag.length_num);
+            if (dist < min_distance) {
+                min_distance = dist;
+                candidate_count = 0;
+                candidates[candidate_count++] = (Candidate){STAIR, i};
+            }else if(dist == min_distance){
+				candidates[candidate_count++] = (Candidate){STAIR, i};
+			}
+        }
+    }
+
+    for(int j = 0; j < MAX_POLES_FROM_SAME_CELL; j++){
+        if(non_looping_p[j] != -1 && p[j] != NULL){
+            int dist = abs(p[j]->end_floor - flag.floor) +
+                       abs(p[j]->width_num - flag.width_num) +
+                       abs(p[j]->length_num - flag.length_num);
+
+            if(dist < min_distance){
+                min_distance = dist;
+                candidate_count = 0;
+                candidates[candidate_count++] = (Candidate){POLE, j};
+            }else if(dist == min_distance){
+				candidates[candidate_count++] = (Candidate){POLE, j};
+			}
+        }
+    }
+
+	if (candidate_count == 0) return NULL;
+
+	int chosen = rand() % candidate_count;
+
+    if(candidates[chosen].type == STAIR){
+        return &maze[s[candidates[chosen].index]->end_floor]
+                     [s[candidates[chosen].index]->end_width_num]
+                     [s[candidates[chosen].index]->end_length_num];
+    }else if(candidates[chosen].type == POLE){
+        return &maze[p[candidates[chosen].index]->end_floor]
+                     [p[candidates[chosen].index]->width_num]
+                     [p[candidates[chosen].index]->length_num];
+    }else{
+		return NULL;
+	}
 }
 
 Block* move_from_stair_or_pole(int floor, int width, int length){
@@ -410,6 +439,8 @@ Block* move_from_stair_or_pole(int floor, int width, int length){
 		return &maze[p[0]->end_floor][width][length];
 	}else if(p_count == 0 && s_count == 1){
 		return &maze[s[0]->end_floor][s[0]->end_width_num][s[0]->end_length_num];
+	}else if(p_count > MAX_POLES_FROM_SAME_CELL || s_count > MAX_STAIRS_FROM_SAME_CELL || p_count < 0 || s_count < 0){
+		return NULL;
 	}else{
 		int non_looping_s[MAX_STAIRS_FROM_SAME_CELL], non_looping_p[MAX_POLES_FROM_SAME_CELL];
 		int visited_s[MAX_STAIRS_FROM_SAME_CELL] = {0};
@@ -427,8 +458,35 @@ Block* move_from_stair_or_pole(int floor, int width, int length){
 			if (p[j] != NULL && !visited_p[j])
 				mark_loops(POLE, j, visited_s, visited_p, s, p, non_looping_s, non_looping_p);
 		}
+		
+		// Check that the player should go to bawana
+		int no_stairs = 1, no_poles = 1;
+		for(int i=0; i<MAX_STAIRS_FROM_SAME_CELL; i++){
+			if(non_looping_s[i] != -1){
+				no_stairs = 0;
+				break;
+			}
+		}
+		for(int j=0; j<MAX_POLES_FROM_SAME_CELL; j++){
+			if(non_looping_p[j] != -1){
+				no_poles = 0;
+				break;
+			}
+		}
+		if(no_stairs && no_poles){
+			// go to bawana
+			return &maze[floor][width][length];
+		}else{
+			// go to closest sp destination
+			Block* next_block = closest_sp_destination(s, p, non_looping_s, non_looping_p);
 
-		return closest_sp_destination(non_looping_s, non_looping_p, floor, width, length);
+			if (next_block == NULL) {
+				printf("Error: No valid next block found in move_from_stair_or_pole\n");
+				// return &maze[floor][width][length];
+			}
+			
+			return next_block;
+		}				
 	}
 }
 
