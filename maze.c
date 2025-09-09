@@ -19,7 +19,6 @@ void init_game(){
 	// load_flag("flag.txt");
 
 	init_maze();
-	assign_consumables();
 }
 
 void init_maze(){
@@ -28,7 +27,7 @@ void init_maze(){
 			for(int l=0; l<LENGTH; l++){
 				Block b = { -1, -1, -1, -1, -1 };
 
-				// If the block is blocked by wall or stair or out of playable area, mark it as invalid block
+				// If the block is blocked by wall or stair / out of playable area / in the bawana area / in the starting area mark it as invalid block
 				if(is_blocked_by_wall(f, w, l) || 
 					is_blocked_by_stair(f, w, l) || 
 					!is_in_the_playable_area(f, w, l) || 
@@ -50,6 +49,8 @@ void init_maze(){
 			}
 		}
 	}
+
+	assign_consumables();
 }
 
 void assign_consumables(){
@@ -570,6 +571,12 @@ void load_stairs(const char *stairs_file){
 		}else if(matched != 6){
 			fgets(buffer, sizeof(buffer), fp);
             printf("Error : Skipping error line stairs.txt (got %d values but expect 6)\n", matched);
+			continue;
+		}else if(start_floor == end_floor){
+			printf("Error : Skipping error line stairs.txt (stairs on the same floor)\n");
+			continue;
+		}else if(start_floor > end_floor){
+			printf("Error : Skipping error line stairs.txt (start floor greater than end floor)\n");
 			continue;
 		}else if(!is_in_the_playable_area(start_floor, start_width_num, start_length_num) || !is_in_the_playable_area(end_floor, end_width_num, end_length_num)){
 			printf("Error : Skipping error line stairs.txt (stairs out of playable area)\n");
