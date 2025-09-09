@@ -93,7 +93,6 @@ typedef struct{
 	Player player[PLAYER_COUNT];
 	int rounds;
 	int movement_dice;
-	Direction direction_dice;
 }Game;
 
 extern Block flag;
@@ -113,7 +112,7 @@ void init_bawana();
 Block* go_to_starting_pos(Player *player);
 void go_to_bawana(Player *player);
 int move_piece(Player *current_player);
-Block* get_dest_block(Player *current_player, int *tot_cost, int*rem_mp);
+Block* get_dest_block(Player *current_player, int *tot_cost, int*rem_mp, int *moved_cells);
 
 // HELPER FUNCTIONS
 

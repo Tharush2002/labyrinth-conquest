@@ -23,7 +23,6 @@ void init_players(){
 
 	game_state.rounds = 0;
 	game_state.movement_dice = -1;
-	game_state.direction_dice = DIR_NA;
 }
 
 int main(){

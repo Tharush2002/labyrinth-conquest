@@ -206,7 +206,7 @@ int move_piece(Player *current_player){
 	int should_directon_dice_roll = current_player->player_rounds%4==0 && 
 				!is_in_starting_area(current_player->current_block->floor, current_player->current_block->width_num, current_player->current_block->length_num);
 
-	if(should_directon_dice_roll) game_state.direction_dice = roll_dir_dice(current_player->direction);
+	if(should_directon_dice_roll) current_player->direction = roll_dir_dice(current_player->direction);
 	
 	Block *dest_block = get_dest_block(current_player, &cost, &rem_mp, &moved_cells);
 	current_player->rem_points = rem_mp;
@@ -252,9 +252,14 @@ Block* get_dest_block(Player *current_player, int *tot_cost, int*rem_mp, int *mo
 		}
 	}
 
+	Block *block = go_to_starting_pos(current_player);
+	if(f == block->floor && w == block->width_num && l == block->length_num){
+		current_player->direction = NORTH;
+	}
+
 	int cost = 0, rem = current_player->rem_points, i;
 
-	Block *block = NULL;
+	block = NULL;
 	Bawana *be = &current_player->bawana_effect;
 
 	for(i=1 ; i<=game_state.movement_dice; i++){
@@ -274,16 +279,16 @@ Block* get_dest_block(Player *current_player, int *tot_cost, int*rem_mp, int *mo
 				}
 				break;
 			case DISORIENTED:
-				game_state.direction_dice = (Direction)(rand()%4 + 1);
+				current_player->direction = (Direction)(rand()%4 + 1);
 				// Further checking
 				if(f==BAWANA_ENTRANCE_FLOOR && w==BAWANA_ENTRANCE_WIDTH && l==BAWANA_ENTRANCE_LENGTH && be->effect_rounds == BAWANA_DISORIENTED_ROUNDS){
 					break;
 				}else if(be->effect_rounds >= 1){
-					game_state.direction_dice = roll_direction_dice(current_player->direction);
+					current_player->direction = roll_direction_dice(current_player->direction);
 					be->effect_rounds--;
 					log_when_disoriented_exists(current_player);
 				}else if(be->effect_rounds == 0){
-					game_state.direction_dice = NORTH;
+					current_player->direction = NORTH;
 					be = &(Bawana){BAWANA_NA, -1, -1, -1};
 				}
 				break;
@@ -302,7 +307,7 @@ Block* get_dest_block(Player *current_player, int *tot_cost, int*rem_mp, int *mo
 				break;
 		}
 
-		switch(game_state.direction_dice){
+		switch(current_player->direction){
 			case NORTH:
 				w -= i;
 				break;
@@ -342,6 +347,10 @@ Block* get_dest_block(Player *current_player, int *tot_cost, int*rem_mp, int *mo
 		// Check if the player is moving onto a stair or pole
 		block = move_from_stair_or_pole(current_player);
 
+		if(!is_in_bawana_area(f, w, l) && !is_in_starting_area(f, w, l) && is_in_the_playable_area(f, w, l)){
+			check_for_captures(current_player);
+		}
+
 		if(f==block->floor && w==block->width_num && l==block->length_num){
 			continue;
 		}else{
@@ -362,21 +371,43 @@ Block* get_dest_block(Player *current_player, int *tot_cost, int*rem_mp, int *mo
 			block = go_to_starting_pos(current_player);
 			break;
 		}else{
-			calc_mp_cost_and_rem(&cost, &rem, &maze[f][w][l]);
-
-			if(rem_mp <= 0){
-				go_to_bawana(current_player);
-				log_deliver_to_bawana_mp_depleted(current_player);
-				block = &maze[BAWANA_ENTRANCE_FLOOR][BAWANA_ENTRANCE_WIDTH][BAWANA_ENTRANCE_LENGTH];
-				break;
-			}			
+			calc_mp_cost_and_rem(&cost, &rem, &maze[f][w][l]);			
 			block = &maze[f][w][l];
 		}
 	}
 
 	*tot_cost = cost;
 	*rem_mp = rem;
+
+	if(rem_mp <= 0){
+		go_to_bawana(current_player);
+		log_deliver_to_bawana_mp_depleted(current_player);
+		block = &maze[BAWANA_ENTRANCE_FLOOR][BAWANA_ENTRANCE_WIDTH][BAWANA_ENTRANCE_LENGTH];
+	}
 	return block;
+}
+
+void set_destination_block(Block *block, Player *player){
+	player->current_block = block;
+}
+
+void check_for_captures(Player *current_player){
+	for(int i=0; i<PLAYER_COUNT; i++){
+		if(game_state.player[i].id != current_player->id){
+			if(game_state.player[i].current_block->floor == current_player->current_block->floor &&
+			   game_state.player[i].current_block->width_num == current_player->current_block->width_num &&
+			   game_state.player[i].current_block->length_num == current_player->current_block->length_num &&
+			   is_in_the_playable_area(game_state.player[i].current_block->floor,
+									 game_state.player[i].current_block->width_num,
+									 game_state.player[i].current_block->length_num)){
+
+				log_player_captured(current_player, &game_state.player[i]);
+				go_to_starting_pos(&game_state.player[i]);
+				game_state.player[i].rem_points = INITIAL_MOVEMENT_POINTS;
+				game_state.player[i].bawana_effect = (Bawana){BAWANA_NA, -1, -1, -1};
+			}
+		}
+	}
 }
 
 
@@ -562,9 +593,6 @@ int is_in_starting_area(int floor, int width, int length){
 	}
 }
 
-void set_destination_block(Block *block, Player *player){
-	player->current_block = block;
-}
 
 void calc_mp_cost_and_rem(int *cost, int* rem_mp, Block *block){
 	if(block->type == COST){
@@ -1119,15 +1147,15 @@ void log_can_move_from_starting_area(Player *player){
 }
 
 void log_in_maze_with_dir_dice(Player *player){ 
-	printf("\t%s rolls and %d on the movement dice and %s on the direction dice, changes direction to %s and moves %s by %d cells and is now at [%d, %d, %d].\n", player_id_to_string(player->id), game_state.movement_dice, direction_to_string(game_state.direction_dice), direction_to_string(player->direction), direction_to_string(game_state.direction_dice), game_state.movement_dice, player->current_block->floor, player->current_block->width_num, player->current_block->length_num);
+	printf("\t%s rolls and %d on the movement dice and %s on the direction dice, changes direction to %s and moves %s by %d cells and is now at [%d, %d, %d].\n", player_id_to_string(player->id), game_state.movement_dice, direction_to_string(player->direction), direction_to_string(player->direction), direction_to_string(player->direction), game_state.movement_dice, player->current_block->floor, player->current_block->width_num, player->current_block->length_num);
 }
 
 void log_in_maze_without_dir_dice(Player *player){ 
-	printf("\t%s rolls and %d on the movement dice and moves %s by %d cells and is now at [%d, %d, %d].\n", player_id_to_string(player->id), game_state.movement_dice, direction_to_string(game_state.direction_dice), game_state.movement_dice, player->current_block->floor, player->current_block->width_num, player->current_block->length_num);
+	printf("\t%s rolls and %d on the movement dice and moves %s by %d cells and is now at [%d, %d, %d].\n", player_id_to_string(player->id), game_state.movement_dice, direction_to_string(player->direction), game_state.movement_dice, player->current_block->floor, player->current_block->width_num, player->current_block->length_num);
 }
 
 void log_is_blocked_by_wall(Player *player){
-	printf("\t%s rolls and %d on the movement dice and cannot move in the %s. Player remains at [%d, %d, %d].\n", player_id_to_string(player->id), game_state.movement_dice, direction_to_string(game_state.direction_dice), player->current_block->floor, player->current_block->width_num, player->current_block->length_num);
+	printf("\t%s rolls and %d on the movement dice and cannot move in the %s. Player remains at [%d, %d, %d].\n", player_id_to_string(player->id), game_state.movement_dice, direction_to_string(player->direction), player->current_block->floor, player->current_block->width_num, player->current_block->length_num);
 }
 
 void log_at_dest(Player *player, int *cells, int *cost){
@@ -1160,7 +1188,7 @@ void log_when_disoriented_starts(Player *player){
 }
 
 void log_when_disoriented_exists(Player *player){
-	printf("\t%s rolls and %d on the movement dice and is disoriented and move in the %s and moves %d cells and is placed at the [%d, %d, %d].\n", player_id_to_string(player->id), game_state.movement_dice, direction_to_string(game_state.direction_dice), game_state.movement_dice, player->current_block->floor, player->current_block->width_num, player->current_block->length_num);
+	printf("\t%s rolls and %d on the movement dice and is disoriented and move in the %s and moves %d cells and is placed at the [%d, %d, %d].\n", player_id_to_string(player->id), game_state.movement_dice, direction_to_string(player->direction), game_state.movement_dice, player->current_block->floor, player->current_block->width_num, player->current_block->length_num);
 }
 
 void log_when_disoriented_ends(Player *player){
@@ -1172,7 +1200,7 @@ void log_when_triggered_starts(Player *player){
 }
 
 void log_when_triggered_exists(Player *player){
-	printf("\t%s is triggered and rolls and %d on the movement dice and move in the %s and moves %d cells and is placed at the [%d, %d, %d].\n", player_id_to_string(player->id), game_state.movement_dice, direction_to_string(game_state.direction_dice), 2*game_state.movement_dice, player->current_block->floor, player->current_block->width_num, player->current_block->length_num);
+	printf("\t%s is triggered and rolls and %d on the movement dice and move in the %s and moves %d cells and is placed at the [%d, %d, %d].\n", player_id_to_string(player->id), game_state.movement_dice, direction_to_string(player->direction), 2*game_state.movement_dice, player->current_block->floor, player->current_block->width_num, player->current_block->length_num);
 }
 
 void log_when_happy(Player *player){
@@ -1195,3 +1223,6 @@ void log_player_won(Player *player){
 	printf("\t%s has reached the flag at [%d, %d, %d] and wins the game!\n", player_id_to_string(player->id), flag.floor, flag.width_num, flag.length_num);
 }
 
+void log_player_captured(Player *player, Player *captured_player){
+	printf("\t%s has captured %s at [%d, %d, %d]. %s is sent to the starting area.\n", player_id_to_string(player->id), player_id_to_string(captured_player->id), captured_player->current_block->floor, captured_player->current_block->width_num, captured_player->current_block->length_num, player_id_to_string(captured_player->id));
+}
