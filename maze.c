@@ -29,7 +29,12 @@ void init_maze(){
 				Block b = { -1, -1, -1, -1, -1 };
 
 				// If the block is blocked by wall or stair or out of playable area, mark it as invalid block
-				if(is_blocked_by_wall(f, w, l) || is_blocked_by_stair(f, w, l) || !is_in_the_playable_area(f, w, l)){
+				if(is_blocked_by_wall(f, w, l) || 
+					is_blocked_by_stair(f, w, l) || 
+					!is_in_the_playable_area(f, w, l) || 
+					is_in_bawana_area(f, w, l) ||
+					is_in_starting_area(f, w, l)
+					){
 					maze[f][w][l] = b;
 					continue;
 				}
@@ -38,7 +43,7 @@ void init_maze(){
 				b.floor = f;
 				b.width_num = w;
 				b.length_num = l;
-				b.type = NORMAL;
+				b.type = ZERO;
 				b.consume_value = 0;
 
 				maze[f][w][l] = b;
@@ -48,7 +53,7 @@ void init_maze(){
 }
 
 void assign_consumables(){
-	int count = 0;
+	int consumable_blocks = 0;
 
 	for(int f=0; f<FLOORS; f++){
 		for(int w=0; w<WIDTH; w++){
@@ -58,13 +63,69 @@ void assign_consumables(){
 					maze[f][w][l].length_num != -1 &&
 					maze[f][w][l].type != -1 &&
 					maze[f][w][l].consume_value != -1){
-					count++;
+					consumable_blocks++;
 				}
 			}
 		}
 	}
 
-	printf("Total valid blocks: %d\n", count);
+	Block *temp[consumable_blocks];
+	int index = 0;
+
+	for(int f=0; f<FLOORS; f++){
+		for(int w=0; w<WIDTH; w++){
+			for(int l=0; l<LENGTH; l++){
+				if(maze[f][w][l].floor != -1 && 
+					maze[f][w][l].width_num != -1 && 
+					maze[f][w][l].length_num != -1 &&
+					maze[f][w][l].type != -1 &&
+					maze[f][w][l].consume_value != -1){
+					temp[index++] = &maze[f][w][l]; 
+				}
+			}
+		}
+	}
+
+	// Shuffle the array using Fisher-Yates algorithm
+	for(int i=consumable_blocks-1; i>0; i--){
+		int j = rand() % (i+1);
+		int t = temp[i];
+		temp[i] = temp[j];
+		temp[j] = t;
+	}
+
+	int zero_consumable_blocks = consumable_blocks * 25 / 100;
+	int one_to_four_consumable_blocks = consumable_blocks * 35 / 100;
+	int one_to_two_bonus_blocks = consumable_blocks * 25 / 100;
+	int three_to_five_bonus_blocks = consumable_blocks * 10 / 100;
+	int multiplier_blocks = consumable_blocks * 5 / 100;
+
+	index = 0;
+
+	for(int i=0 ; i<zero_consumable_blocks ; i++, index++){
+		temp[index]->type = ZERO;
+		temp[index]->consume_value = 0;
+	}
+
+	for(int i=0 ; i<one_to_four_consumable_blocks ; i++, index++){
+		temp[index]->type = COST;
+		temp[index]->consume_value = (rand() % 4) + 1;
+	}
+
+	for(int i=0 ; i<one_to_two_bonus_blocks ; i++, index++){
+		temp[index]->type = BONUS;
+		temp[index]->consume_value = (rand() % 2) + 1;
+	}
+
+	for(int i=0 ; i<three_to_five_bonus_blocks ; i++, index++){
+		temp[index]->type = BONUS;
+		temp[index]->consume_value = (rand() % 3) + 3;
+	}
+
+	for(int i=0 ; i<multiplier_blocks ; i++, index++){
+		temp[index]->type = MULTIPLIER;
+		temp[index]->consume_value = (rand() % 2) + 2;
+	}
 }
 
 void change_stair_direction(){
@@ -88,6 +149,7 @@ void change_stair_direction(){
 				}
 				stairs[i].direction = UNI_DOWN;
 			}
+			break;
 		case UNI_UP:
 			for(int i=0; i<stairs_count; i++){
 				if(stairs[0].start_floor > stairs[0].end_floor){
@@ -213,10 +275,12 @@ int is_in_the_playable_area(int floor, int width, int length){
 			if((width==6 && length>=20 && length<LENGTH) || (length==20 && width>=6 && width<WIDTH)){
 				return 0;
 			}
+			break;
 		case 1:
 			if((width>=0 && width<=5) && (length>=8 && length<=16)){
 				return 0;
 			}
+			break;
 		case 2:
 			if(!(length>=8 && length<=16)){
 				return 0;
@@ -329,6 +393,7 @@ Block* closest_sp_destination(int non_looping_s[], int non_looping_p[], int floo
 	// }
 
 	// return closest_block;
+	return &maze[floor][width][length];
 }
 
 Block* move_from_stair_or_pole(int floor, int width, int length){
