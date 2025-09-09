@@ -16,8 +16,50 @@ void init_seed(const char *seed_file){
 	fclose(fp);
 }
 
+void init_players(){
+	game_state.player[0] = (Player){ A, &maze[0][6][12], NORTH, INITIAL_MOVEMENT_POINTS, {BAWANA_NA, -1, -1, -1}, 0 };
+	game_state.player[1] = (Player){ B, &maze[0][9][8], WEST, INITIAL_MOVEMENT_POINTS, {BAWANA_NA, -1, -1, -1}, 0 };
+	game_state.player[2] = (Player){ C, &maze[0][9][16], EAST, INITIAL_MOVEMENT_POINTS, {BAWANA_NA, -1, -1, -1}, 0 };
+
+	game_state.rounds = 0;
+	game_state.movement_dice = -1;
+	game_state.direction_dice = DIR_NA;
+}
+
 int main(){
 	init_seed("./seed.txt");
-	init_game();	
+	init_game();
+	
+	init_players();
+
+	do {
+		printf("=====================\n");
+		printf("\tRound - %d\n", game_state.rounds+1);
+		printf("=====================\n");
+
+		if(game_state.rounds > HOW_MANY_ROUNDS_TO_CHANGE_STAIR_DIR && 
+			game_state.rounds % HOW_MANY_ROUNDS_TO_CHANGE_STAIR_DIR == 0){
+			printf("Changing stairs direction...\n");
+			change_stairs_direction();
+		}
+
+		for(int i=0; i<PLAYER_COUNT; i++){
+			Player *current_player = &game_state.player[i];
+			printf("Player %s's turn:\n", player_id_to_string(current_player->id));
+
+			// Roll the dice
+			game_state.movement_dice = roll_dice();
+
+			// Every 4 rounds, re-roll direction dice
+			if(current_player->player_rounds%4==0 && 
+				is_in_starting_area(current_player->current_block->floor, current_player->current_block->width_num, current_player->current_block->length_num))
+				game_state.direction_dice = roll_dir_dice(current_player->direction);			
+
+			current_player->player_rounds++;
+		}
+		game_state.rounds++;
+
+	}while(1);
+
 	return 0;
 }
