@@ -289,6 +289,7 @@ Block* get_dest_block(Player *current_player, int *tot_cost, int*rem_mp, int *mo
 					log_when_disoriented_exists(current_player);
 				}else if(be->effect_rounds == 0){
 					current_player->direction = NORTH;
+					log_when_disoriented_ends(current_player);
 					be = &(Bawana){BAWANA_NA, -1, -1, -1};
 				}
 				break;
