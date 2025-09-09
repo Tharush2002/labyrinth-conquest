@@ -196,26 +196,29 @@ int is_blocked_by_wall(int floor, int width_num, int length_num){
 	return 0; 
 }
 
-int is_blocked_by_stair(int floor, int width_num, int length_num){
-	for(int i=0; i<stairs_count; i++){
-		int upper = (stairs[i].start_floor > stairs[i].end_floor) ? stairs[i].start_floor : stairs[i].end_floor;
-		int lower = (stairs[i].start_floor < stairs[i].end_floor) ? stairs[i].start_floor : stairs[i].end_floor;
-		int f_difference = abs(stairs[i].start_floor - stairs[i].end_floor);
+int is_blocked_by_stair(int floor, int width_num, int length_num) {
+    for (int i = 0; i < stairs_count; i++) {
+        int upper = (stairs[i].start_floor > stairs[i].end_floor) ? stairs[i].start_floor : stairs[i].end_floor;
+        int lower = (stairs[i].start_floor < stairs[i].end_floor) ? stairs[i].start_floor : stairs[i].end_floor;
 
-		if(f_difference < 2 && !(floor > lower && floor < upper)) continue;
+        if (floor < lower || floor > upper || upper == lower) continue; 
 
-		if(width_num == stairs[i].start_width_num && 
-			length_num == stairs[i].start_length_num && 
-			length_num == stairs[i].end_length_num && 
-			width_num == stairs[i].end_width_num){
-			return 1;
-		}else{
-			for(int i = lower+1 ; i<upper ; i++){
-				//
-			}
-		}
-	}
-	return 0; 
+        double floor_diff = (double)abs(stairs[i].start_floor - stairs[i].end_floor);
+        double current_floor_pos = (double)abs(floor - stairs[i].start_floor);
+        double pos_factor = current_floor_pos / floor_diff;
+
+        double calc_width = stairs[i].start_width_num + ((double)(stairs[i].end_width_num - stairs[i].start_width_num) * pos_factor);
+        double calc_length = stairs[i].start_length_num + ((double)(stairs[i].end_length_num - stairs[i].start_length_num) * pos_factor);
+
+        int rounded_calc_width = round(calc_width);
+        int rounded_calc_length = round(calc_length);
+
+        if (width_num == rounded_calc_width && length_num == rounded_calc_length) {
+            return 1;
+        }
+    }
+    
+    return 0; 
 }
 
 int is_in_the_playable_area(int floor, int width, int length){
