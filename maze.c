@@ -27,7 +27,7 @@ void init_maze(){
 	for(int f=0; f<FLOORS; f++){
 		for(int w=0; w<WIDTH; w++){
 			for(int l=0; l<LENGTH; l++){
-				Block b = { -1, -1, -1, -1, -1 };
+				Block b = { -1, -1, -1, CONSUMER_NA, -1 };
 
 				// If the block is blocked by wall or stair / out of playable area / in the bawana area / in the starting area mark it as invalid block
 				if(is_blocked_by_wall(f, w, l) || 
@@ -59,7 +59,7 @@ void assign_consumables(){
 				if(maze[f][w][l].floor != -1 && 
 					maze[f][w][l].width_num != -1 && 
 					maze[f][w][l].length_num != -1 &&
-					maze[f][w][l].type != -1 &&
+					maze[f][w][l].type != CONSUMER_NA &&
 					maze[f][w][l].consume_value != -1){
 					consumable_blocks++;
 				}
@@ -76,7 +76,7 @@ void assign_consumables(){
 				if(maze[f][w][l].floor != -1 && 
 					maze[f][w][l].width_num != -1 && 
 					maze[f][w][l].length_num != -1 &&
-					maze[f][w][l].type != -1 &&
+					maze[f][w][l].type != CONSUMER_NA &&
 					maze[f][w][l].consume_value != -1){
 
 					temp[index++] = &maze[f][w][l]; 
@@ -204,32 +204,16 @@ void change_stair_direction(){
 	}
 }
 
-int move_piece(Block *current_block){
-	int cost = 0;
-	if(can_move_entirely(current_block, &cost)){
-		// switch(game_state.direction_dice){
-		// 	case NORTH:
-		// 		current_block->width_num -= game_state.movement_dice;
-		// 		break;
-		// 	case SOUTH:
-		// 		current_block->width_num += game_state.movement_dice;
-		// 		break;
-		// 	case EAST:
-		// 		current_block->length_num += game_state.movement_dice;
-		// 		break;
-		// 	case WEST:
-		// 		current_block->length_num -= game_state.movement_dice;
-		// 		break;
-		// 	default:
-		// 		printf("Invalid direction!\n");
-		// 		return 0;
-		// }
-		// return 1;
-		printf("Move successful!\n");
-		return 1;
-	}else{
+int move_piece(Player *current_player){
+	int cost = 0, rem_mp = current_player->rem_points;
+	Block *dest_block = get_dest_block(current_player, &cost, &rem_mp);
+
+	if(dest_block == NULL){
 		printf("Move blocked!\n");
 		return 0;
+	}else{
+		printf("Move successful!\n");
+		return 1;
 	}
 }
 
@@ -239,6 +223,26 @@ int move_piece(Block *current_block){
 
 int roll_dice(){
 	return (rand() % 6) + 1;
+}
+
+Direction roll_dir_dice(Direction prev_dir){
+	int dir = roll_dice();
+	switch(dir){
+		case 1:
+			return prev_dir;
+		case 2:
+			return NORTH;
+		case 3:
+			return EAST;
+		case 4:
+			return SOUTH;
+		case 5:
+			return WEST;
+		case 6:
+			return prev_dir;
+		default:
+			return DIR_NA; 
+	}
 }
 
 void shuffle_array(void *arr, size_t n, size_t elem_size) {
@@ -350,13 +354,69 @@ int is_in_starting_area(int floor, int width, int length){
 	}
 }
 
-int can_move_entirely(Block *current_block, int *cost){
-	int f = current_block->floor;
-	int w = current_block->width_num;
-	int l = current_block->length_num;
-	Block *block;
+Block* get_dest_block(Player *current_player, int *tot_cost, int*rem_mp){
+	int f = current_player->current_block->floor;
+	int w = current_player->current_block->width_num;
+	int l = current_player->current_block->length_num;
+	int cost = 0, rem = current_player->rem_points;
+
+	Block *block = NULL;
+	Bawana *be = &current_player->bawana_effect;
 
 	for(int i=1 ; i<=game_state.movement_dice; i++){
+		if(is_in_starting_area(f, w, l)){
+			if(game_state.movement_dice != 6){
+				printf("In starting area and didn't roll a 6!\n");
+				return NULL;
+			}else{
+				switch(current_player->id){
+					case A:
+						return &maze[0][5][12];
+					case B:
+						return &maze[0][9][7];
+					case C:	
+						return &maze[0][9][17];
+				}
+			}
+		}
+
+		// Check for Bawana effects
+		switch(be->state){
+			case FOOD_POISONING:
+				// FOOD POISONING: cannot move this turn
+				if(be->effect_rounds > 1){
+					be->effect_rounds--;
+					return NULL;
+				}else if(be->effect_rounds == 1){
+					be = &(Bawana){BAWANA_NA, -1, -1, -1};
+				}
+				break;
+			case DISORIENTED:
+				game_state.direction_dice = (Direction)(rand()%4 + 1);
+				// Further checking
+				if(f==BAWANA_ENTRANCE_FLOOR && w==BAWANA_ENTRANCE_WIDTH && l==BAWANA_ENTRANCE_LENGTH && be->effect_rounds == BAWANA_DISORIENTED_ROUNDS){
+					break;
+				}else if(be->effect_rounds >= 1){
+					game_state.direction_dice = roll_direction_dice(current_player->direction);
+					be->effect_rounds--;
+				}else if(be->effect_rounds == 0){
+					game_state.direction_dice = NORTH;
+					be = &(Bawana){BAWANA_NA, -1, -1, -1};
+				}
+				break;
+			case TRIGGERED:
+				// TRIGGERED: moves twice as fast (double the movement dice)
+				if(be->effect_rounds > 1){
+					game_state.movement_dice *= 2;
+					be->effect_rounds--;
+				}else if(be->effect_rounds == 1){
+					be = &(Bawana){BAWANA_NA, -1, -1, -1};
+				}
+				break;
+			default:
+				break;
+		}
+
 		switch(game_state.direction_dice){
 			case NORTH:
 				w -= i;
@@ -372,26 +432,37 @@ int can_move_entirely(Block *current_block, int *cost){
 				break;
 			default:
 				printf("Invalid direction!\n");
-				return 0;
+				return NULL;
 		}
 		if(maze[f][w][l].floor == -1 && 
 		   maze[f][w][l].width_num == -1 && 
 		   maze[f][w][l].length_num == -1 &&
-		   maze[f][w][l].type == -1 &&
+		   maze[f][w][l].type == CONSUMER_NA &&
 		   maze[f][w][l].consume_value == -1){
-			return 0;
 			printf("Move blocked by wall!\n");
+			return NULL;
 		}else if(!is_in_the_playable_area(f, w, l)){
-			return 0;
 			printf("Move out of bounds of the maze playable area!\n");
+			return NULL;
 		}
 
+		calc_mp_cost_and_rem(&cost, &rem, &maze[f][w][l]);
+
+		if(flag.floor == f && flag.width_num == w && flag.length_num == l){
+			printf("Move into flag area!\n");
+			break;
+		}
+
+		// Check if the player is moving onto a stair or pole
 		block = move_from_stair_or_pole(f, w, l);
-		
-		f = block->floor;
-		w = block->width_num;
-		l = block->length_num;
-		*cost += block->consume_value;		
+
+		if(f==block->floor && w==block->width_num && l==block->length_num){
+			continue;
+		}else{
+			f = block->floor;
+			w = block->width_num;
+			l = block->length_num;
+		}	
 
 		if(flag.floor == f && flag.width_num == w && flag.length_num == l){
 			printf("Move into flag area!\n");
@@ -403,15 +474,37 @@ int can_move_entirely(Block *current_block, int *cost){
 		}else if(is_in_starting_area(f, w, l)){
 			printf("Move into starting area!\n");
 			break;
+		}else{
+			calc_mp_cost_and_rem(&cost, &rem, &maze[f][w][l]);
+
+			if(rem_mp <= 0){
+				// Move to bawana
+			}
+			
+			block = &maze[f][w][l];
 		}
 	}
 
-	set_destination_block(block);
-	return 1;
+	*tot_cost = cost;
+	*rem_mp = rem;
+	return block;
 }
 
-void set_destination_block(Block *block){
-	game_state.player.current_block = block;
+void set_destination_block(Block *block, Player *player){
+	player->current_block = block;
+}
+
+void calc_mp_cost_and_rem(int *cost, int* rem_mp, Block *block){
+	if(block->type == COST){
+		*cost += block->consume_value;
+		*rem_mp -= block->consume_value;
+	}else if(block->type == BONUS){
+		*rem_mp += block->consume_value;
+	}else if(block->type == MULTIPLIER){
+		*rem_mp *= block->consume_value;
+	}else{
+		return;
+	}
 }
 
 Block* closest_sp_destination(Stair *s[], Pole *p[],
@@ -545,6 +638,11 @@ int stairs_from_cell(int floor, int width, int length, Stair *out[]){
 		if((stairs[i].start_floor == floor) && (stairs[i].start_width_num == width) && (stairs[i].start_length_num == length)){
 			out[count++] = &stairs[i];
 		}
+
+		if((stairs[i].direction == BI) && (stairs[i].end_floor == floor) && (stairs[i].end_width_num == width) && (stairs[i].end_length_num == length)){
+			out[count++] = &stairs[i];
+		}
+		
 	}
 	return count;
 }
@@ -868,3 +966,6 @@ int load_flag(const char *flag_file){
 	fclose(fp);
 	return 1;
 }
+
+// LOGGING FUNCTIONS
+
