@@ -99,9 +99,11 @@ extern Block flag;
 extern Stair *stairs;
 extern Pole *poles;
 extern Wall *walls;
+extern Player *current_player;
+extern Game game_state;
 
 extern Block maze[FLOORS][WIDTH][LENGTH];
-extern Game game_state;
+extern Bawana bawana[BAWANA_SQUARES];
 
 // MAIN FUNCTIONS
 
@@ -109,12 +111,12 @@ void init_game();
 void init_maze();
 void assign_consumables();
 void init_bawana();
-Block* go_to_starting_pos(Player *player);
-void go_to_bawana(Player *player);
-int move_piece(Player *current_player);
-Block* get_dest_block(Player *current_player, int *tot_cost, int*rem_mp, int *moved_cells);
-void set_dest_block(Block *block, Player *player);
-void check_for_captures(Player *current_player, Block *dest_block);
+Block* get_starting_pos_in_maze(Player *player);
+void go_to_bawana();
+int move_piece(Player *player);
+Block* get_dest_block(int *tot_cost, int*rem_mp, int *moved_cells);
+void set_dest_block(Block *block);
+void check_for_captures(Block *dest_block);
 
 // HELPER FUNCTIONS
 
@@ -132,9 +134,9 @@ int is_in_starting_area(int floor, int width, int length);
 
 void calc_mp_cost_and_rem(int *cost, int* rem_mp, Block *block);
 Block* closest_sp_destination(Stair *s[], Pole *p[],
-                              int non_looping_s[], int non_looping_p[], Player *current_player);
+                              int non_looping_s[], int non_looping_p[]);
 
-Block* move_from_stair_or_pole(Player *current_player);
+Block* move_from_stair_or_pole(int* is_went_to_bawana, int* is_went_to_starting_area, int floor, int width, int length);
 int stairs_from_cell(int floor, int width_num, int length_num, Stair *out[]);
 int poles_from_cell(int floor, int width_num, int length_num, Pole *out[]);
 void mark_loops(BlockType type, int current_index,
@@ -151,31 +153,33 @@ void free_maze();
 char* direction_to_string(Direction dir);
 char* bawana_state_to_string(BawanaState state);
 char* player_id_to_string(PlayerID id);
+int is_player_won();
 
 // LOGGING FUNCTIONS
 
-void log_cannot_move_from_starting_area(Player *player);
-void log_can_move_from_starting_area(Player *player);
-void log_in_maze_with_dir_dice(Player *player);
-void log_in_maze_without_dir_dice(Player *player);
-void log_is_blocked_by_wall(Player *player);
-void log_at_dest(Player *player, int *cells, int *cost);
-void log_deliver_to_bawana_mp_depleted(Player *player);
-void log_deliver_to_bawana(Player *player);
-void log_when_food_poisoning_starts(Player *player);
-void log_when_food_poisoning_exists(Player *player);
-void log_when_food_poisoning_ends(Player *player);
-void log_when_disoriented_starts(Player *player);
-void log_when_disoriented_exists(Player *player);
-void log_when_disoriented_ends(Player *player);
-void log_when_triggered_starts(Player *player);
-void log_when_triggered_exists(Player *player);
-void log_when_happy(Player *player);
-void log_when_normal(Player *player);
-void log_land_on_stair(Player *player, Block *prev_block, Block *next_block);
-void log_land_on_pole(Player *player, Block *prev_block, Block *next_block);
-void log_player_won(Player *player);
-void log_player_captured(Player *player, Player *captured_player);
+void log_cannot_move_from_starting_area();
+void log_can_move_from_starting_area();
+void log_in_maze_with_dir_dice();
+void log_in_maze_without_dir_dice();
+void log_is_blocked_by_wall();
+void log_at_dest(int *cells, int *cost);
+void log_deliver_to_bawana_mp_depleted();
+void log_deliver_to_bawana();
+void log_when_food_poisoning_starts();
+void log_when_food_poisoning_exists();
+void log_when_food_poisoning_ends();
+void log_when_disoriented_starts();
+void log_when_disoriented_exists();
+void log_when_disoriented_ends();
+void log_when_triggered_starts();
+void log_when_triggered_exists();
+void log_when_happy();
+void log_when_normal();
+void log_land_on_stair(Block *prev_block, Block *next_block);
+void log_land_on_pole(Block *prev_block, Block *next_block);
+void log_player_won();
+void log_player_captured(Player *captured_player);
+void log_player_status(Player *player);
 
 // DEBUGGING FUNCTIONS
 
