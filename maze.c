@@ -288,7 +288,7 @@ Block* get_dest_block(int *tot_cost, int*rem_mp, int *moved_cells){
 		log_when_triggered_exists(current_player);
 	}
 	
-	for(i=1 ; i<=game_state.movement_dice; i++){
+	for(i=1 ; i<=effective_movement_dice; i++){
 		(*moved_cells)++;
 		// Check for Bawana effects
 		switch(be->state){
