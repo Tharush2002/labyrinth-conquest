@@ -223,7 +223,6 @@ int move_piece(Player *player){
 	if(should_directon_dice_roll) current_player->direction = roll_dir_dice(current_player->direction);
 	
 	Block *dest_block = get_dest_block(&cost, &rem_mp, &moved_cells);
-	current_player->rem_points = rem_mp;
 
 	if(dest_block == NULL){
 		return 0;
@@ -282,6 +281,12 @@ Block* get_dest_block(int *tot_cost, int*rem_mp, int *moved_cells){
 	
 	block = NULL;
 	Bawana *be = &current_player->bawana_effect;
+
+	int effective_movement_dice = game_state.movement_dice;
+	if(be->state == TRIGGERED && be->effect_rounds == -1) {
+		effective_movement_dice *= 2;
+		log_when_triggered_exists(current_player);
+	}
 	
 	for(i=1 ; i<=game_state.movement_dice; i++){
 		(*moved_cells)++;
@@ -300,31 +305,17 @@ Block* get_dest_block(int *tot_cost, int*rem_mp, int *moved_cells){
 				}
 				break;
 			case DISORIENTED:
-				current_player->direction = (Direction)(rand()%4 + 1);
-				// Further checking
 				if(f==BAWANA_ENTRANCE_FLOOR && w==BAWANA_ENTRANCE_WIDTH && l==BAWANA_ENTRANCE_LENGTH && be->effect_rounds == BAWANA_DISORIENTED_ROUNDS){
 					break;
 				}else if(be->effect_rounds >= 1){
-					current_player->direction = roll_dir_dice(current_player->direction);
+					current_player->direction = (Direction)(rand()%4+1);
 					be->effect_rounds--;
 					log_when_disoriented_exists(current_player);
 				}else if(be->effect_rounds == 0){
 					current_player->direction = NORTH;
 					log_when_disoriented_ends(current_player);
-					be = &(Bawana){BAWANA_NA, -1, -1, -1};
+					current_player->bawana_effect = (Bawana){BAWANA_NA, -1, -1, -1};
 				}
-				break;
-			case TRIGGERED:
-				// TRIGGERED: moves twice as fast (double the movement dice)
-				if(be->effect_rounds == -1){
-					game_state.movement_dice *= 2;
-					// be->effect_rounds--;
-					log_when_triggered_exists(current_player);
-				}
-				// }else if(be->effect_rounds == 1){
-				// 	log_when_triggered_ends(current_player);
-				// 	be = &(Bawana){BAWANA_NA, -1, -1, -1};
-				// }
 				break;
 			default:
 				break;
@@ -399,6 +390,8 @@ Block* get_dest_block(int *tot_cost, int*rem_mp, int *moved_cells){
 		log_deliver_to_bawana_mp_depleted(current_player);
 		return &maze[BAWANA_ENTRANCE_FLOOR][BAWANA_ENTRANCE_WIDTH][BAWANA_ENTRANCE_LENGTH];
 	}
+
+	current_player->rem_points = *rem_mp;
 	return block;
 }
 
@@ -615,7 +608,7 @@ void calc_mp_cost_and_rem(int *cost, int* rem_mp, Block *block){
 	}else if(block->type == BONUS){
 		*rem_mp += block->consume_value;
 	}else if(block->type == MULTIPLIER){
-		*rem_mp *= block->consume_value;
+		if(*rem_mp > 0) *rem_mp *= block->consume_value;
 	}else{
 		return;
 	}
