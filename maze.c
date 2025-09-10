@@ -15,12 +15,18 @@ int stairs_count, poles_count, walls_count;
 // MAIN FUNCTIONS
 
 void init_game(){
-	// load_walls("walls.txt");
-	// load_stairs("stairs.txt");
-	// load_poles("poles.txt");
-	// load_flag("flag.txt");
+	load_walls("walls.txt");
+	load_stairs("stairs.txt");
+	load_poles("poles.txt");
+	load_flag("flag.txt");
 
-	init_maze();
+	//print loaded walls, stairs, poles, flag for debugging
+	print_walls();
+	print_stairs();
+	print_poles();
+	print_flag();
+
+	// init_maze();
 }
 
 void init_maze(){
@@ -145,7 +151,7 @@ void init_bawana(){
 	}
 	for(int i=0 ; i<2 ; i++, index++){
 		temp[i]->state = TRIGGERED;
-		temp[i]->effect_rounds = BAWANA_TRIGGERED_ROUNDS;
+		temp[i]->effect_rounds = -1;
 	}
 	for(int i=0 ; i<2 ; i++, index++){
 		temp[i]->state = HAPPY;
@@ -214,6 +220,8 @@ int move_piece(Player *current_player){
 	if(dest_block == NULL){
 		return 0;
 	}else{
+		set_dest_block(dest_block, current_player);
+
 		if(flag.floor == dest_block->floor && flag.width_num == dest_block->width_num && flag.length_num == dest_block->length_num){
 			log_player_won(current_player);
 			return 2;
@@ -225,7 +233,7 @@ int move_piece(Player *current_player){
 		}
 
 		should_directon_dice_roll ? log_in_maze_with_dir_dice(current_player) : log_in_maze_without_dir_dice(current_player);
-		log_at_dest(current_player, moved_cells, cost);
+		log_at_dest(current_player, &moved_cells, &cost);
 		return 1;
 	}
 }
@@ -284,7 +292,7 @@ Block* get_dest_block(Player *current_player, int *tot_cost, int*rem_mp, int *mo
 				if(f==BAWANA_ENTRANCE_FLOOR && w==BAWANA_ENTRANCE_WIDTH && l==BAWANA_ENTRANCE_LENGTH && be->effect_rounds == BAWANA_DISORIENTED_ROUNDS){
 					break;
 				}else if(be->effect_rounds >= 1){
-					current_player->direction = roll_direction_dice(current_player->direction);
+					current_player->direction = roll_dir_dice(current_player->direction);
 					be->effect_rounds--;
 					log_when_disoriented_exists(current_player);
 				}else if(be->effect_rounds == 0){
@@ -295,14 +303,15 @@ Block* get_dest_block(Player *current_player, int *tot_cost, int*rem_mp, int *mo
 				break;
 			case TRIGGERED:
 				// TRIGGERED: moves twice as fast (double the movement dice)
-				if(be->effect_rounds > 1){
+				if(be->effect_rounds == -1){
 					game_state.movement_dice *= 2;
-					be->effect_rounds--;
+					// be->effect_rounds--;
 					log_when_triggered_exists(current_player);
-				}else if(be->effect_rounds == 1){
-					log_when_triggered_ends(current_player);
-					be = &(Bawana){BAWANA_NA, -1, -1, -1};
 				}
+				// }else if(be->effect_rounds == 1){
+				// 	log_when_triggered_ends(current_player);
+				// 	be = &(Bawana){BAWANA_NA, -1, -1, -1};
+				// }
 				break;
 			default:
 				break;
@@ -348,8 +357,8 @@ Block* get_dest_block(Player *current_player, int *tot_cost, int*rem_mp, int *mo
 		// Check if the player is moving onto a stair or pole
 		block = move_from_stair_or_pole(current_player);
 
-		if(!is_in_bawana_area(f, w, l) && !is_in_starting_area(f, w, l) && is_in_the_playable_area(f, w, l)){
-			check_for_captures(current_player);
+		if(i==game_state.movement_dice && !is_in_bawana_area(f, w, l) && !is_in_starting_area(f, w, l) && is_in_the_playable_area(f, w, l)){
+			check_for_captures(current_player, block);
 		}
 
 		if(f==block->floor && w==block->width_num && l==block->length_num){
@@ -380,7 +389,7 @@ Block* get_dest_block(Player *current_player, int *tot_cost, int*rem_mp, int *mo
 	*tot_cost = cost;
 	*rem_mp = rem;
 
-	if(rem_mp <= 0){
+	if(*rem_mp <= 0){
 		go_to_bawana(current_player);
 		log_deliver_to_bawana_mp_depleted(current_player);
 		block = &maze[BAWANA_ENTRANCE_FLOOR][BAWANA_ENTRANCE_WIDTH][BAWANA_ENTRANCE_LENGTH];
@@ -388,16 +397,16 @@ Block* get_dest_block(Player *current_player, int *tot_cost, int*rem_mp, int *mo
 	return block;
 }
 
-void set_destination_block(Block *block, Player *player){
+void set_dest_block(Block *block, Player *player){
 	player->current_block = block;
 }
 
-void check_for_captures(Player *current_player){
+void check_for_captures(Player *current_player, Block *dest_block){
 	for(int i=0; i<PLAYER_COUNT; i++){
 		if(game_state.player[i].id != current_player->id){
-			if(game_state.player[i].current_block->floor == current_player->current_block->floor &&
-			   game_state.player[i].current_block->width_num == current_player->current_block->width_num &&
-			   game_state.player[i].current_block->length_num == current_player->current_block->length_num &&
+			if(game_state.player[i].current_block->floor == dest_block->floor &&
+			   game_state.player[i].current_block->width_num == dest_block->width_num &&
+			   game_state.player[i].current_block->length_num == dest_block->length_num &&
 			   is_in_the_playable_area(game_state.player[i].current_block->floor,
 									 game_state.player[i].current_block->width_num,
 									 game_state.player[i].current_block->length_num)){
@@ -736,7 +745,7 @@ Block* move_from_stair_or_pole(Player *current_player){
 		if(no_stairs && no_poles){
 			go_to_bawana(current_player);
 			log_deliver_to_bawana(current_player);
-			&maze[BAWANA_ENTRANCE_FLOOR][BAWANA_ENTRANCE_WIDTH][BAWANA_ENTRANCE_LENGTH];
+			return &maze[BAWANA_ENTRANCE_FLOOR][BAWANA_ENTRANCE_WIDTH][BAWANA_ENTRANCE_LENGTH];
 		}else{
 			// go to closest sp destination
 			Block* next_block = closest_sp_destination(s, p, non_looping_s, non_looping_p, current_player);
@@ -1089,7 +1098,6 @@ void free_maze(){
 	if(stairs) free(stairs);
 	if(poles) free(poles);
 	if(walls) free(walls);
-	if(bawana) free(bawana);
 }
 
 char* direction_to_string(Direction dir){
@@ -1213,7 +1221,7 @@ void log_when_normal(Player *player){
 }
 
 void log_land_on_stair(Player *player, Block *prev_block, Block *next_block){
-	printf("\t%s lands on [%d, %d, %d] which is a stair cell. %s takes the stairs and now placed at [%d, %d, %d] in floor %d.\n", player_id_to_string(player->id), prev_block->floor, prev_block->width_num, prev_block->length_num, player_id_to_string(player->id), player->current_block->floor, player->current_block->width_num, player->current_block->length_num, player->current_block->floor);
+	printf("\t%s lands on [%d, %d, %d] which is a stair cell. %s takes the stairs and now placed at [%d, %d, %d] in floor %d.\n", player_id_to_string(player->id), prev_block->floor, prev_block->width_num, prev_block->length_num, player_id_to_string(player->id), next_block->floor, next_block->width_num, next_block->length_num, next_block->floor);
 }
 
 void log_land_on_pole(Player *player, Block *prev_block, Block *next_block){
@@ -1226,4 +1234,31 @@ void log_player_won(Player *player){
 
 void log_player_captured(Player *player, Player *captured_player){
 	printf("\t%s has captured %s at [%d, %d, %d]. %s is sent to the starting area.\n", player_id_to_string(player->id), player_id_to_string(captured_player->id), captured_player->current_block->floor, captured_player->current_block->width_num, captured_player->current_block->length_num, player_id_to_string(captured_player->id));
+}
+
+// DEBUGGING FUNCTIONS
+
+void print_stairs(){
+	printf("Stairs:\n");
+	for(int i=0; i<stairs_count; i++){
+		printf("\t[%d, %d, %d] to [%d, %d, %d], direction: %s\n", stairs[i].start_floor, stairs[i].start_width_num, stairs[i].start_length_num, stairs[i].end_floor, stairs[i].end_width_num, stairs[i].end_length_num, (stairs[i].direction == UNI_UP) ? "UNI_UP" : (stairs[i].direction == UNI_DOWN) ? "UNI_DOWN" : "BI");
+	}
+}
+
+void print_poles(){
+	printf("Poles:\n");
+	for(int i=0; i<poles_count; i++){
+		printf("\t[%d, %d, %d] to [%d, %d, %d]\n", poles[i].start_floor, poles[i].width_num, poles[i].length_num, poles[i].end_floor, poles[i].width_num, poles[i].length_num);
+	}
+}
+
+void print_walls(){
+	printf("Walls:\n");
+	for(int i=0; i<walls_count; i++){
+		printf("\tFloor %d: from [%d, %d] to [%d, %d]\n", walls[i].floor, walls[i].start_width_num, walls[i].start_length_num, walls[i].end_width_num, walls[i].end_length_num);
+	}
+}
+
+void print_flag(){
+	printf("Flag is at [%d, %d, %d]\n", flag.floor, flag.width_num, flag.length_num);
 }

@@ -14,7 +14,7 @@
 #define BAWANA_FOOD_POISONING_ROUNDS 3
 #define BAWANA_FOOD_POISONING_BONUS 0
 #define BAWANA_DISORIENTED_ROUNDS 4
-#define BAWANA_TRIGGERED_ROUNDS 3
+// #define BAWANA_TRIGGERED_ROUNDS 3
 #define BAWANA_DISORIENTED_BONUS 50
 #define BAWANA_TRIGGERED_BONUS 50
 #define BAWANA_TRIGGERED_MULTIPLIER 2
@@ -113,11 +113,13 @@ Block* go_to_starting_pos(Player *player);
 void go_to_bawana(Player *player);
 int move_piece(Player *current_player);
 Block* get_dest_block(Player *current_player, int *tot_cost, int*rem_mp, int *moved_cells);
+void set_dest_block(Block *block, Player *player);
+void check_for_captures(Player *current_player, Block *dest_block);
 
 // HELPER FUNCTIONS
 
 int roll_dice();
-Direction get_direction(int direction_dice);
+Direction roll_dir_dice(Direction prev_dir);
 void change_stair_direction();
 void shuffle_array(void *arr, size_t n, size_t elem_size);
 Direction get_direction(int direction_dice);
@@ -128,7 +130,6 @@ int is_in_the_playable_area(int floor, int width, int length);
 int is_in_bawana_area(int floor, int width, int length);
 int is_in_starting_area(int floor, int width, int length);
 
-void set_destination_block(Block *block, Player *player);
 void calc_mp_cost_and_rem(int *cost, int* rem_mp, Block *block);
 Block* closest_sp_destination(Stair *s[], Pole *p[],
                               int non_looping_s[], int non_looping_p[], Player *current_player);
@@ -160,6 +161,7 @@ void log_in_maze_without_dir_dice(Player *player);
 void log_is_blocked_by_wall(Player *player);
 void log_at_dest(Player *player, int *cells, int *cost);
 void log_deliver_to_bawana_mp_depleted(Player *player);
+void log_deliver_to_bawana(Player *player);
 void log_when_food_poisoning_starts(Player *player);
 void log_when_food_poisoning_exists(Player *player);
 void log_when_food_poisoning_ends(Player *player);
@@ -174,5 +176,12 @@ void log_land_on_stair(Player *player, Block *prev_block, Block *next_block);
 void log_land_on_pole(Player *player, Block *prev_block, Block *next_block);
 void log_player_won(Player *player);
 void log_player_captured(Player *player, Player *captured_player);
+
+// DEBUGGING FUNCTIONS
+
+void print_stairs();
+void print_poles();
+void print_walls();
+void print_flag();
 
 #endif
