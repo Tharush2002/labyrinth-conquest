@@ -23,8 +23,8 @@ $(TARGET): $(OBJS)
 
 # Clean up build files
 clean:
-	rm -f $(OBJS) $(TARGET)
+	rm -f $(OBJS) $(TARGET) log_file.txt
 
-# Run the program
+# Run the program (line-buffered output, log saved)
 run: $(TARGET)
-	./$(TARGET)
+	stdbuf -oL -eL ./$(TARGET) 2>&1 | tee log_file.txt
