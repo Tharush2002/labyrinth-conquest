@@ -203,10 +203,12 @@ void go_to_bawana(){
 		case HAPPY:
 			current_player->rem_points = BAWANA_HAPPY_BONUS;
 			log_when_happy(current_player);
+			current_player->bawana_effect = (Bawana){BAWANA_NA, -1, -1, -1};
 			break;
 		case NORMAL:
 			current_player->rem_points = rand() % 89 + 11;
 			log_when_normal(current_player);
+			current_player->bawana_effect = (Bawana){BAWANA_NA, -1, -1, -1};
 			break;
 		default:
 			break;
@@ -215,14 +217,14 @@ void go_to_bawana(){
 
 int move_piece(Player *player){
 	current_player = player;
-	int cost = 0, rem_mp = current_player->rem_points, moved_cells = 0;
+	int cost = 0, *rem_mp = &current_player->rem_points, moved_cells = 0;
 	
 	int should_directon_dice_roll = current_player->player_rounds%4==0 && 
 				!is_in_starting_area(current_player->current_block->floor, current_player->current_block->width_num, current_player->current_block->length_num) && current_player->bawana_effect.state != DISORIENTED;
 
 	if(should_directon_dice_roll) current_player->direction = roll_dir_dice(current_player->direction);
 	
-	Block *dest_block = get_dest_block(&cost, &rem_mp, &moved_cells);
+	Block *dest_block = get_dest_block(&cost, rem_mp, &moved_cells);
 
 	if(dest_block == NULL){
 		return 0;
@@ -367,7 +369,7 @@ Block* get_dest_block(int *tot_cost, int*rem_mp, int *moved_cells){
 		w = block->width_num;
 		l = block->length_num;
 
-		if(i==game_state.movement_dice && is_in_the_playable_area(f, w, l)){
+		if(i==effective_movement_dice && is_in_the_playable_area(f, w, l)){
 			check_for_captures(block);
 		}		
 		
@@ -608,7 +610,8 @@ void calc_mp_cost_and_rem(int *cost, int* rem_mp, Block *block){
 	}else if(block->type == BONUS){
 		*rem_mp += block->consume_value;
 	}else if(block->type == MULTIPLIER){
-		if(*rem_mp > 0) *rem_mp *= block->consume_value;
+		// if(*rem_mp > 0) *rem_mp *= block->consume_value;
+		*cost *= block->consume_value;
 	}else{
 		return;
 	}
@@ -697,9 +700,43 @@ Block* move_from_stair_or_pole(int* is_went_to_bawana, int* is_went_to_starting_
 	if(p_count == 0 && s_count == 0){
 		return &maze[floor][width][length];
 	}else if(p_count == 1 && s_count == 0){
-		return &maze[p[0]->end_floor][width][length];
+		Block *next_block = &maze[p[0]->end_floor][p[0]->width_num][p[0]->length_num];
+
+		if(is_in_bawana_area(next_block->floor, next_block->width_num, next_block->length_num)){
+			*is_went_to_bawana = 1;	
+			go_to_bawana();
+			log_deliver_to_bawana(current_player);
+			return &maze[BAWANA_ENTRANCE_FLOOR][BAWANA_ENTRANCE_WIDTH][BAWANA_ENTRANCE_LENGTH];
+		}else if(is_in_starting_area(next_block->floor, next_block->width_num, next_block->length_num)){
+			*is_went_to_starting_area = 1;
+			return get_starting_pos_in_maze(current_player);
+		}
+
+		log_land_on_pole(current_player->current_block, &maze[p[0]->end_floor][p[0]->width_num][p[0]->length_num]);
+		return next_block;
 	}else if(p_count == 0 && s_count == 1){
-		return &maze[s[0]->end_floor][s[0]->end_width_num][s[0]->end_length_num];
+		Block *next_block = NULL;
+
+        if(s[0]->start_floor == floor && s[0]->start_width_num == width && s[0]->start_length_num == length){
+            next_block = &maze[s[0]->end_floor][s[0]->end_width_num][s[0]->end_length_num];
+        } else if(s[0]->direction == BI && s[0]->end_floor == floor && s[0]->end_width_num == width && s[0]->end_length_num == length){
+            next_block = &maze[s[0]->start_floor][s[0]->start_width_num][s[0]->start_length_num];
+        } else {
+            return &maze[floor][width][length];
+        }
+		
+		log_land_on_stair(current_player->current_block, &maze[s[0]->end_floor][s[0]->end_width_num][s[0]->end_length_num]);
+
+		if(is_in_bawana_area(next_block->floor, next_block->width_num, next_block->length_num)){
+			*is_went_to_bawana = 1;	
+			go_to_bawana();
+			log_deliver_to_bawana(current_player);
+			return &maze[BAWANA_ENTRANCE_FLOOR][BAWANA_ENTRANCE_WIDTH][BAWANA_ENTRANCE_LENGTH];
+		}else if(is_in_starting_area(next_block->floor, next_block->width_num, next_block->length_num)){
+			*is_went_to_starting_area = 1;
+			return get_starting_pos_in_maze(current_player);
+		}
+		return next_block;
 	}else if(p_count > MAX_POLES_FROM_SAME_CELL || s_count > MAX_STAIRS_FROM_SAME_CELL || p_count < 0 || s_count < 0){
 		printf("Error: More than maximum poles or stairs from the same cell in move_from_stair_or_pole\n");
 		return NULL;
@@ -1241,7 +1278,7 @@ void log_player_captured(Player *captured_player){
 }
 
 void log_player_status(Player *player){
-	printf("\tMovement Points: %d\n\tCurrent Position: [%d, %d, %d]\n\tDirection: %s\n\tBawana State: %s\n\n", player->rem_points, player->current_block->floor, player->current_block->width_num, player->current_block->length_num, direction_to_string(player->direction), bawana_state_to_string(player->bawana_effect.state));
+	printf("\tMovement Points: %d\n\tCurrent Position: [%d, %d, %d]\n\tDirection: %s\n\tBawana State: %s\n\tPlayer Rounds: %d\n\n", player->rem_points, player->current_block->floor, player->current_block->width_num, player->current_block->length_num, direction_to_string(player->direction), bawana_state_to_string(player->bawana_effect.state), player->player_rounds);
 }
 
 // DEBUGGING FUNCTIONS
