@@ -541,6 +541,7 @@ int is_blocked_by_stair(int floor, int width_num, int length_num) {
         int lower = (stairs[i].start_floor < stairs[i].end_floor) ? stairs[i].start_floor : stairs[i].end_floor;
 
         if (floor < lower || floor > upper || upper == lower) continue; 
+		if (floor == stairs[i].start_floor || floor == stairs[i].end_floor) continue;
 
         double floor_diff = (double)abs(stairs[i].start_floor - stairs[i].end_floor);
         double current_floor_pos = (double)abs(floor - stairs[i].start_floor);
