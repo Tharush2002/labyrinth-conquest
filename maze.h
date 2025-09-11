@@ -87,6 +87,7 @@ typedef struct{
 	int rem_points;
 	Bawana bawana_effect;
 	int player_rounds;
+	BawanaState last_bawana_state;
 }Player;
 
 typedef struct{
@@ -153,7 +154,7 @@ void free_maze();
 char* direction_to_string(Direction dir);
 char* bawana_state_to_string(BawanaState state);
 char* player_id_to_string(PlayerID id);
-int is_player_won();
+int is_player_won(int floor, int width_num, int length_num);
 
 // LOGGING FUNCTIONS
 
