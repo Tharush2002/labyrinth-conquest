@@ -5,7 +5,6 @@ A thrilling 3D maze game implementation in C where three players compete to capt
 ## 🎮 Game Overview
 
 **Labyrinth Conquest** is a **command-line interface (CLI)** turn-based strategy game featuring:
-
 - 🏗️ **3-floor maze structure** with unique layouts
 - 👥 **3 players** (A, B, C) competing simultaneously  
 - 🎲 **Dual dice system** - movement dice and directional dice
