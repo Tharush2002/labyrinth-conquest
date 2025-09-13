@@ -17,8 +17,7 @@ char *stair_format = "[%d, %d, %d, %d, %d, %d]";
 char *pole_format = "[%d, %d, %d, %d]";
 char *flag_format = "[%d, %d, %d]";
 
-// MAIN FUNCTIONS
-
+// MAIN GAME FUNCTIONS (Core game mechanics and initialization)
 void init_game(){
 	load_walls("walls.txt");
 	load_stairs("stairs.txt");
@@ -166,53 +165,6 @@ void init_bawana(){
 	for(int i=0 ; i<4 ; i++, index++){
 		temp[i]->state = NORMAL;
 		temp[i]->effect_rounds = -1;
-	}
-}
-
-Block* get_starting_pos_in_maze(Player *player){
-	switch(player->id){
-		case A:
-			return &maze[0][5][12];
-		case B:
-			return &maze[0][9][7];
-		case C:	
-			return &maze[0][9][17];
-		default:
-			return NULL;
-	}
-}
-
-void go_to_bawana(){
-	int i = (rand() % BAWANA_SQUARES);
-	current_player->bawana_effect = bawana[i];
-	current_player->last_bawana_state = current_player->bawana_effect.state;
-	current_player->rem_points = 0;
-
-	switch(current_player->bawana_effect.state){
-		case FOOD_POISONING:
-			current_player->rem_points = BAWANA_FOOD_POISONING_BONUS;
-			log_when_food_poisoning_starts(current_player);
-			break;
-		case DISORIENTED:
-			current_player->rem_points = BAWANA_DISORIENTED_BONUS;
-			log_when_disoriented_starts(current_player);
-			break;
-		case TRIGGERED:
-			current_player->rem_points = BAWANA_TRIGGERED_BONUS;
-			log_when_triggered_starts(current_player);
-			break;
-		case HAPPY:
-			current_player->rem_points = BAWANA_HAPPY_BONUS;
-			log_when_happy(current_player);
-			current_player->bawana_effect = (Bawana){BAWANA_NA, -1, -1, -1};
-			break;
-		case NORMAL:
-			current_player->rem_points = rand() % 89 + 11;
-			log_when_normal(current_player);
-			current_player->bawana_effect = (Bawana){BAWANA_NA, -1, -1, -1};
-			break;
-		default:
-			break;
 	}
 }
 
@@ -399,6 +351,40 @@ void set_dest_block(Block *block){
 	current_player->current_block = block;
 }
 
+void go_to_bawana(){
+	int i = (rand() % BAWANA_SQUARES);
+	current_player->bawana_effect = bawana[i];
+	current_player->last_bawana_state = current_player->bawana_effect.state;
+	current_player->rem_points = 0;
+
+	switch(current_player->bawana_effect.state){
+		case FOOD_POISONING:
+			current_player->rem_points = BAWANA_FOOD_POISONING_BONUS;
+			log_when_food_poisoning_starts(current_player);
+			break;
+		case DISORIENTED:
+			current_player->rem_points = BAWANA_DISORIENTED_BONUS;
+			log_when_disoriented_starts(current_player);
+			break;
+		case TRIGGERED:
+			current_player->rem_points = BAWANA_TRIGGERED_BONUS;
+			log_when_triggered_starts(current_player);
+			break;
+		case HAPPY:
+			current_player->rem_points = BAWANA_HAPPY_BONUS;
+			log_when_happy(current_player);
+			current_player->bawana_effect = (Bawana){BAWANA_NA, -1, -1, -1};
+			break;
+		case NORMAL:
+			current_player->rem_points = rand() % 89 + 11;
+			log_when_normal(current_player);
+			current_player->bawana_effect = (Bawana){BAWANA_NA, -1, -1, -1};
+			break;
+		default:
+			break;
+	}
+}
+
 void check_for_captures(Block *dest_block){
 	for(int i=0; i<PLAYER_COUNT; i++){
 		if(game_state.player[i].id != current_player->id){
@@ -415,33 +401,6 @@ void check_for_captures(Block *dest_block){
 				game_state.player[i].bawana_effect = (Bawana){BAWANA_NA, -1, -1, -1};
 			}
 		}
-	}
-}
-
-
-// HELPER FUNCTIONS
-
-int roll_dice(){
-	return (rand() % 6) + 1;
-}
-
-Direction roll_dir_dice(Direction prev_dir){
-	int dir = roll_dice();
-	switch(dir){
-		case 1:
-			return prev_dir;
-		case 2:
-			return NORTH;
-		case 3:
-			return EAST;
-		case 4:
-			return SOUTH;
-		case 5:
-			return WEST;
-		case 6:
-			return prev_dir;
-		default:
-			return DIR_NA; 
 	}
 }
 
@@ -491,6 +450,33 @@ void change_stair_direction(){
 	}
 }
 
+
+// UTILITY FUNCTIONS (Helper functions for calculations and checks)
+
+int roll_dice(){
+	return (rand() % 6) + 1;
+}
+
+Direction roll_dir_dice(Direction prev_dir){
+	int dir = roll_dice();
+	switch(dir){
+		case 1:
+			return prev_dir;
+		case 2:
+			return NORTH;
+		case 3:
+			return EAST;
+		case 4:
+			return SOUTH;
+		case 5:
+			return WEST;
+		case 6:
+			return prev_dir;
+		default:
+			return DIR_NA; 
+	}
+}
+
 void shuffle_array(void *arr, size_t n, size_t elem_size) {
     unsigned char *array = arr;
     unsigned char *temp = malloc(elem_size);
@@ -520,6 +506,22 @@ Direction get_direction(int direction_dice){
 			return DIR_NA; 
 	}
 }
+
+Block* get_starting_pos_in_maze(Player *player){
+	switch(player->id){
+		case A:
+			return &maze[0][5][12];
+		case B:
+			return &maze[0][9][7];
+		case C:	
+			return &maze[0][9][17];
+		default:
+			return NULL;
+	}
+}
+
+
+// Validation and checking functions
 
 int is_blocked_by_wall(int floor, int width_num, int length_num){
 	for(int i=0; i<walls_count; i++){
@@ -601,6 +603,18 @@ int is_in_starting_area(int floor, int width, int length){
 	}
 }
 
+int is_player_won(int floor, int width_num, int length_num){
+	if(floor == flag.floor &&
+	   width_num == flag.width_num &&
+	   length_num == flag.length_num){
+		return 1;
+	}else{
+		return 0;
+	}
+}
+
+
+// Movement point and cost calculations
 
 void calc_mp_cost_and_rem(int *cost, int* rem_mp, Block *block){
 	if(block->type == COST){
@@ -616,87 +630,8 @@ void calc_mp_cost_and_rem(int *cost, int* rem_mp, Block *block){
 	}
 }
 
-Block* closest_sp_destination(Stair *s[], Pole *p[],
-                              int non_looping_s[], int non_looping_p[]) {
-	typedef struct {
-    	BlockType type;
-    	int index;
-	} Candidate;
 
-    int min_distance = 10000;
-	int f = current_player->current_block->floor;
-	int w = current_player->current_block->width_num;
-	int l = current_player->current_block->length_num;
-
-	Candidate candidates[MAX_STAIRS_FROM_SAME_CELL + MAX_POLES_FROM_SAME_CELL];
-    int candidate_count = 0;
-
-    for (int i = 0; i < MAX_STAIRS_FROM_SAME_CELL; i++) {
-        if (non_looping_s[i] != -1 && s[i] != NULL) {
-            int dist = abs(s[i]->end_floor - flag.floor) +
-                       abs(s[i]->end_width_num - flag.width_num) +
-                       abs(s[i]->end_length_num - flag.length_num);
-            if (dist < min_distance) {
-                min_distance = dist;
-                candidate_count = 0;
-                candidates[candidate_count++] = (Candidate){STAIR, i};
-            }else if(dist == min_distance){
-				candidates[candidate_count++] = (Candidate){STAIR, i};
-			}
-        }
-    }
-
-    for(int j = 0; j < MAX_POLES_FROM_SAME_CELL; j++){
-        if(non_looping_p[j] != -1 && p[j] != NULL){
-            int dist = abs(p[j]->end_floor - flag.floor) +
-                       abs(p[j]->width_num - flag.width_num) +
-                       abs(p[j]->length_num - flag.length_num);
-
-            if(dist < min_distance){
-                min_distance = dist;
-                candidate_count = 0;
-                candidates[candidate_count++] = (Candidate){POLE, j};
-            }else if(dist == min_distance){
-				candidates[candidate_count++] = (Candidate){POLE, j};
-			}
-        }
-    }
-
-	if (candidate_count == 0) return NULL;
-
-	int chosen = rand() % candidate_count;
-
-	Block *dest = NULL;
-
-    if(candidates[chosen].type == STAIR){
-		int at_end = (f == s[candidates[chosen].index]->end_floor && w == s[candidates[chosen].index]->end_width_num && l == s[candidates[chosen].index]->end_length_num);
-		int at_start = (f == s[candidates[chosen].index]->start_floor && w == s[candidates[chosen].index]->start_width_num && l == s[candidates[chosen].index]->start_length_num);
-		
-		if(s[candidates[chosen].index]->direction == BI && at_end){
-			dest = &maze[s[candidates[chosen].index]->start_floor]
-			[s[candidates[chosen].index]->start_width_num]
-			[s[candidates[chosen].index]->start_length_num];
-
-			log_land_on_stair(current_player->current_block, dest);
-			return dest;
-		}else if(at_start){
-			dest = &maze[s[candidates[chosen].index]->end_floor]
-			[s[candidates[chosen].index]->end_width_num]
-			[s[candidates[chosen].index]->end_length_num];
-
-			log_land_on_stair(current_player->current_block, dest);
-			return dest;
-		}
-    }else if(candidates[chosen].type == POLE){
-		dest = &maze[p[candidates[chosen].index]->end_floor]
-		[p[candidates[chosen].index]->width_num]
-		[p[candidates[chosen].index]->length_num];
-
-		log_land_on_pole(current_player->current_block, dest);
-		return dest;
-    }
-	return dest;
-}
+// Stairs and poles handling
 
 Block* move_from_stair_or_pole(int* is_went_to_bawana, int* is_went_to_starting_area, int floor, int width, int length){
 	Pole *p[MAX_POLES_FROM_SAME_CELL] = {NULL};
@@ -849,6 +784,91 @@ int poles_from_cell(int floor, int width, int length, Pole *out[]){
 	return count;
 }
 
+Block* closest_sp_destination(Stair *s[], Pole *p[],
+                              int non_looping_s[], int non_looping_p[]) {
+	typedef struct {
+    	BlockType type;
+    	int index;
+	} Candidate;
+
+    int min_distance = 10000;
+	int f = current_player->current_block->floor;
+	int w = current_player->current_block->width_num;
+	int l = current_player->current_block->length_num;
+
+	Candidate candidates[MAX_STAIRS_FROM_SAME_CELL + MAX_POLES_FROM_SAME_CELL];
+    int candidate_count = 0;
+
+    for (int i = 0; i < MAX_STAIRS_FROM_SAME_CELL; i++) {
+        if (non_looping_s[i] != -1 && s[i] != NULL) {
+            int dist = abs(s[i]->end_floor - flag.floor) +
+                       abs(s[i]->end_width_num - flag.width_num) +
+                       abs(s[i]->end_length_num - flag.length_num);
+            if (dist < min_distance) {
+                min_distance = dist;
+                candidate_count = 0;
+                candidates[candidate_count++] = (Candidate){STAIR, i};
+            }else if(dist == min_distance){
+				candidates[candidate_count++] = (Candidate){STAIR, i};
+			}
+        }
+    }
+
+    for(int j = 0; j < MAX_POLES_FROM_SAME_CELL; j++){
+        if(non_looping_p[j] != -1 && p[j] != NULL){
+            int dist = abs(p[j]->end_floor - flag.floor) +
+                       abs(p[j]->width_num - flag.width_num) +
+                       abs(p[j]->length_num - flag.length_num);
+
+            if(dist < min_distance){
+                min_distance = dist;
+                candidate_count = 0;
+                candidates[candidate_count++] = (Candidate){POLE, j};
+            }else if(dist == min_distance){
+				candidates[candidate_count++] = (Candidate){POLE, j};
+			}
+        }
+    }
+
+	if (candidate_count == 0) return NULL;
+
+	int chosen = rand() % candidate_count;
+
+	Block *dest = NULL;
+
+    if(candidates[chosen].type == STAIR){
+		int at_end = (f == s[candidates[chosen].index]->end_floor && w == s[candidates[chosen].index]->end_width_num && l == s[candidates[chosen].index]->end_length_num);
+		int at_start = (f == s[candidates[chosen].index]->start_floor && w == s[candidates[chosen].index]->start_width_num && l == s[candidates[chosen].index]->start_length_num);
+		
+		if(s[candidates[chosen].index]->direction == BI && at_end){
+			dest = &maze[s[candidates[chosen].index]->start_floor]
+			[s[candidates[chosen].index]->start_width_num]
+			[s[candidates[chosen].index]->start_length_num];
+
+			log_land_on_stair(current_player->current_block, dest);
+			return dest;
+		}else if(at_start){
+			dest = &maze[s[candidates[chosen].index]->end_floor]
+			[s[candidates[chosen].index]->end_width_num]
+			[s[candidates[chosen].index]->end_length_num];
+
+			log_land_on_stair(current_player->current_block, dest);
+			return dest;
+		}
+    }else if(candidates[chosen].type == POLE){
+		dest = &maze[p[candidates[chosen].index]->end_floor]
+		[p[candidates[chosen].index]->width_num]
+		[p[candidates[chosen].index]->length_num];
+
+		log_land_on_pole(current_player->current_block, dest);
+		return dest;
+    }
+	return dest;
+}
+
+
+// Loop detection functions
+
 void mark_loops(BlockType type, int current_index,
                 int visited_s[], int visited_p[],
                 Stair *s[], Pole *p[], int non_looping_s[], int non_looping_p[]) {
@@ -948,6 +968,9 @@ int is_stair_pole_loop(Stair *stair, Pole *pole) {
 
     return 0;
 }
+
+
+// // File I/O and memory management
 
 void load_stairs(const char *stairs_file){
 	FILE *fp = fopen(stairs_file, "r");
@@ -1156,6 +1179,9 @@ void free_maze(){
 	if(walls) free(walls);
 }
 
+
+// String conversion functions
+
 char* direction_to_string(Direction dir){
 	switch(dir){
 		case NORTH:
@@ -1201,17 +1227,8 @@ char* player_id_to_string(PlayerID id){
 	}
 }
 
-int is_player_won(int floor, int width_num, int length_num){
-	if(floor == flag.floor &&
-	   width_num == flag.width_num &&
-	   length_num == flag.length_num){
-		return 1;
-	}else{
-		return 0;
-	}
-}
 
-// LOGGING FUNCTIONS
+// LOGGING FUNCTIONS (Output and display functions)
 
 void log_cannot_move_from_starting_area(){
 	printf("\t-> %s is at the starting area and rolls %d on the movement dice cannot enter the maze.\n", player_id_to_string(current_player->id), game_state.movement_dice);
@@ -1306,6 +1323,7 @@ void log_player_captured(Player *captured_player){
 void log_player_status(Player *player){
 	printf("\tMovement Points: %d\n\tCurrent Position: [%d, %d, %d]\n\tDirection: %s\n\tBawana State: %s\n\tPlayer Rounds: %d\n\n", player->rem_points, player->current_block->floor, player->current_block->width_num, player->current_block->length_num, direction_to_string(player->direction), bawana_state_to_string(player->bawana_effect.state), player->player_rounds);
 }
+
 
 // DEBUGGING FUNCTIONS
 

@@ -106,58 +106,64 @@ extern Game game_state;
 extern Block maze[FLOORS][WIDTH][LENGTH];
 extern Bawana bawana[BAWANA_SQUARES];
 
-// MAIN FUNCTIONS
-
+// MAIN GAME FUNCTIONS (Core game mechanics & initialization)
 void init_game();
 void init_maze();
 void assign_consumables();
 void init_bawana();
-Block* get_starting_pos_in_maze(Player *player);
-void go_to_bawana();
 int move_piece(Player *player);
 Block* get_dest_block(int *tot_cost, int*rem_mp, int *moved_cells);
 void set_dest_block(Block *block);
+void go_to_bawana();
 void check_for_captures(Block *dest_block);
+void change_stair_direction();
 
-// HELPER FUNCTIONS
 
+// UTILITY FUNCTIONS (For calculations & checks)
 int roll_dice();
 Direction roll_dir_dice(Direction prev_dir);
-void change_stair_direction();
 void shuffle_array(void *arr, size_t n, size_t elem_size);
 Direction get_direction(int direction_dice);
+Block* get_starting_pos_in_maze(Player *player);
+
+// Validation and checking functions
 int is_blocked_by_wall(int floor, int width_num, int length_num);
 int is_blocked_by_stair(int floor, int width_num, int length_num);
-
 int is_in_the_playable_area(int floor, int width, int length);
 int is_in_bawana_area(int floor, int width, int length);
 int is_in_starting_area(int floor, int width, int length);
+int is_player_won(int floor, int width_num, int length_num);
 
+// Movement point and cost calculation functions
 void calc_mp_cost_and_rem(int *cost, int* rem_mp, Block *block);
-Block* closest_sp_destination(Stair *s[], Pole *p[],
-                              int non_looping_s[], int non_looping_p[]);
 
+// Stair and Poles handling functions
 Block* move_from_stair_or_pole(int* is_went_to_bawana, int* is_went_to_starting_area, int floor, int width, int length);
 int stairs_from_cell(int floor, int width_num, int length_num, Stair *out[]);
 int poles_from_cell(int floor, int width_num, int length_num, Pole *out[]);
+Block* closest_sp_destination(Stair *s[], Pole *p[],
+                              int non_looping_s[], int non_looping_p[]);
+
+// Loop detection functions
 void mark_loops(BlockType type, int current_index,
 				int visited_s[], int visited_p[],
 				Stair *s[], Pole *p[], int non_looping_s[], int non_looping_p[]);
 int is_stair_loop(Stair *a, Stair *b);
 int is_stair_pole_loop(Stair *stair, Pole *pole);
 
+// File I/O and memory management functions
 void load_stairs(const char *stairs_file);
 void load_poles(const char *poles_file);
 void load_walls(const char *walls_file);
 int load_flag(const char *flag_file);
 void free_maze();
+
+// STRING CONVERSION FUNCTIONS (For logging and debugging)
 char* direction_to_string(Direction dir);
 char* bawana_state_to_string(BawanaState state);
 char* player_id_to_string(PlayerID id);
-int is_player_won(int floor, int width_num, int length_num);
 
-// LOGGING FUNCTIONS
-
+// LOGGING FUNCTIONS (For game events)
 void log_cannot_move_from_starting_area();
 void log_can_move_from_starting_area();
 void log_in_maze_with_dir_dice();
@@ -183,7 +189,6 @@ void log_player_captured(Player *captured_player);
 void log_player_status(Player *player);
 
 // DEBUGGING FUNCTIONS
-
 void print_stairs();
 void print_poles();
 void print_walls();
