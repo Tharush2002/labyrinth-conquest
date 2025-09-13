@@ -82,6 +82,9 @@ void assign_consumables(){
 	for(int f=0; f<FLOORS; f++){
 		for(int w=0; w<WIDTH; w++){
 			for(int l=0; l<LENGTH; l++){
+				if(is_in_a_pole_cell(f, w, l) || is_in_a_stair_cell(f, w, l)){
+					continue;
+				}
 				if(maze[f][w][l].floor != -1 && 
 					maze[f][w][l].width_num != -1 && 
 					maze[f][w][l].length_num != -1 &&
@@ -559,6 +562,31 @@ int is_blocked_by_stair(int floor, int width_num, int length_num) {
     }
     
     return 0; 
+}
+
+int is_in_a_stair_cell(int floor, int width_num, int length_num){
+	for(int i=0; i<stairs_count; i++){
+		if((stairs[i].start_floor == floor && 
+			stairs[i].start_width_num == width_num && 
+			stairs[i].start_length_num == length_num) ||
+		   (stairs[i].end_floor == floor && 
+			stairs[i].end_width_num == width_num && 
+			stairs[i].end_length_num == length_num)){
+			return 1;
+		}
+	}
+	return 0;
+}
+
+int is_in_a_pole_cell(int floor, int width_num, int length_num){
+	for(int i=0; i<poles_count; i++){
+		if(poles[i].start_floor == floor && 
+		   poles[i].width_num == width_num && 
+		   poles[i].length_num == length_num){
+			return 1;
+		}
+	}
+	return 0;
 }
 
 int is_in_the_playable_area(int floor, int width, int length){

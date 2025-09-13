@@ -129,6 +129,8 @@ Block* get_starting_pos_in_maze(Player *player);
 // Validation and checking functions
 int is_blocked_by_wall(int floor, int width_num, int length_num);
 int is_blocked_by_stair(int floor, int width_num, int length_num);
+int is_in_a_stair_cell(int floor, int width_num, int length_num);
+int is_in_a_pole_cell(int floor, int width_num, int length_num);
 int is_in_the_playable_area(int floor, int width, int length);
 int is_in_bawana_area(int floor, int width, int length);
 int is_in_starting_area(int floor, int width, int length);
