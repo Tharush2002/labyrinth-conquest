@@ -1377,26 +1377,26 @@ void log_player_status(Player *player){
 // DEBUGGING FUNCTIONS
 
 void print_stairs(){
-	printf("Stairs:\n");
+	printf("\nStairs:\n");
 	for(int i=0; i<stairs_count; i++){
 		printf("\t[%d, %d, %d] to [%d, %d, %d], direction: %s\n", stairs[i].start_floor, stairs[i].start_width_num, stairs[i].start_length_num, stairs[i].end_floor, stairs[i].end_width_num, stairs[i].end_length_num, (stairs[i].direction == UNI_UP) ? "UNI_UP" : (stairs[i].direction == UNI_DOWN) ? "UNI_DOWN" : "BI");
 	}
 }
 
 void print_poles(){
-	printf("Poles:\n");
+	printf("\nPoles:\n");
 	for(int i=0; i<poles_count; i++){
 		printf("\t[%d, %d, %d] to [%d, %d, %d]\n", poles[i].start_floor, poles[i].width_num, poles[i].length_num, poles[i].end_floor, poles[i].width_num, poles[i].length_num);
 	}
 }
 
 void print_walls(){
-	printf("Walls:\n");
+	printf("\nWalls:\n");
 	for(int i=0; i<walls_count; i++){
 		printf("\tFloor %d: from [%d, %d] to [%d, %d]\n", walls[i].floor, walls[i].start_width_num, walls[i].start_length_num, walls[i].end_width_num, walls[i].end_length_num);
 	}
 }
 
 void print_flag(){
-	printf("Flag is at [%d, %d, %d]\n", flag.floor, flag.width_num, flag.length_num);
+	printf("\nFlag is at [%d, %d, %d]\n\n", flag.floor, flag.width_num, flag.length_num);
 }
