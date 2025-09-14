@@ -87,7 +87,6 @@ typedef struct{
 	int rem_points;
 	Bawana bawana_effect;
 	int player_rounds;
-	BawanaState last_bawana_state;
 }Player;
 
 typedef struct{
@@ -112,8 +111,9 @@ void init_maze();
 void assign_consumables();
 void init_bawana();
 int move_piece(Player *player);
-Block* get_dest_block(int *tot_cost, int*rem_mp, int *moved_cells);
+Block* get_dest_block(int *tot_cost, int *moved_cells);
 void set_dest_block(Block *block);
+void direct_to_bawana(Block **block);
 void go_to_bawana();
 void check_for_captures(Block *dest_block);
 void change_stair_direction();
@@ -172,11 +172,11 @@ void log_in_maze_with_dir_dice();
 void log_in_maze_without_dir_dice();
 void log_is_blocked_by_wall();
 void log_at_dest(int *cells, int *cost);
-void log_deliver_to_bawana_mp_depleted();
-void log_deliver_to_bawana();
+void log_deliver_to_bawana_mp_depleted(BawanaState new_bawana_state);
+void log_deliver_to_bawana(BawanaState new_bawana_state);
 void log_when_food_poisoning_starts();
 void log_when_food_poisoning_exists();
-void log_when_food_poisoning_ends();
+void log_when_food_poisoning_ends(BawanaState new_bawana_state);
 void log_when_disoriented_starts();
 void log_when_disoriented_exists();
 void log_when_disoriented_ends();
