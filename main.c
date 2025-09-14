@@ -18,9 +18,9 @@ void init_seed(const char *seed_file){
 }
 
 void init_players(){
-	game_state.player[0] = (Player){ A, &maze[0][6][12], NORTH, INITIAL_MOVEMENT_POINTS, {BAWANA_NA, -1, -1, -1}, 0, BAWANA_NA };
-	game_state.player[1] = (Player){ B, &maze[0][9][8], WEST, INITIAL_MOVEMENT_POINTS, {BAWANA_NA, -1, -1, -1}, 0, BAWANA_NA };
-	game_state.player[2] = (Player){ C, &maze[0][9][16], EAST, INITIAL_MOVEMENT_POINTS, {BAWANA_NA, -1, -1, -1}, 0, BAWANA_NA };
+	game_state.player[0] = (Player){ A, &maze[0][6][12], NORTH, INITIAL_MOVEMENT_POINTS, {BAWANA_NA, -1, -1, -1}, 0 };
+	game_state.player[1] = (Player){ B, &maze[0][9][8], WEST, INITIAL_MOVEMENT_POINTS, {BAWANA_NA, -1, -1, -1}, 0 };
+	game_state.player[2] = (Player){ C, &maze[0][9][16], EAST, INITIAL_MOVEMENT_POINTS, {BAWANA_NA, -1, -1, -1}, 0 };
 
 	game_state.rounds = 0;
 	game_state.movement_dice = -1;
@@ -44,10 +44,10 @@ int main(){
 		for(int i=0; i<PLAYER_COUNT; i++){
 			Player *current_player = &game_state.player[i];
 			printf("Player %s's turn :\n", player_id_to_string(current_player->id));
+			
+			game_state.movement_dice = roll_dice();
 
 			log_player_status(current_player);
-
-			game_state.movement_dice = roll_dice();
 
 			if(move_piece(current_player)==2){
 				printf("\n");
