@@ -65,6 +65,9 @@ void assign_consumables(){
 	for(int f=0; f<FLOORS; f++){
 		for(int w=0; w<WIDTH; w++){
 			for(int l=0; l<LENGTH; l++){
+				if(is_in_a_pole_cell(f, w, l) || is_in_a_stair_cell(f, w, l)){
+					continue;
+				}
 				if(maze[f][w][l].floor != -1 && 
 					maze[f][w][l].width_num != -1 && 
 					maze[f][w][l].length_num != -1 &&
